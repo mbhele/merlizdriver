@@ -73,7 +73,7 @@ router.post('/register', async (req, res) => {
 
     const token = generateToken(newUser);
 
-    // Return the user details along with the token
+    // Return the user details along with the token and redirect URL
     return res.json({
       message: 'User registered successfully',
       token,
@@ -90,11 +90,13 @@ router.post('/register', async (req, res) => {
         paymentMethods: newUser.paymentMethods,
         createdAt: newUser.createdAt,
       },
+      redirect: 'https://merlizdriver.onrender.com/admin/dashboard' // Added redirect URL
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // Login route
 router.post('/login', (req, res, next) => {

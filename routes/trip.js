@@ -6,6 +6,22 @@ const mongoose = require('mongoose');
 const Trip = require('../models/Trip');
 const Driver = require('../models/Driver');
 const Pusher = require('pusher');
+const nodemailer = require('nodemailer'); // Import nodemailer
+
+
+
+
+// Nodemailer Transporter Setup
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
+  auth: {
+    user: '1mbusombhele@gmail.com', // Replace with your Gmail email
+    pass: 'rxyb eclg vpdy bghh', // Replace with your App Password
+  },
+});
 
 const User = require('../models/User');
 const { ensureAuthenticated, ensureRole } = require('../middleware/auth');
@@ -197,52 +213,89 @@ router.post('/approve/:tripId', ensureAuthenticated, ensureRole(['driver', 'admi
 
     console.log(`Trip approved by driver ${driver.name} (ID: ${driverId}) for trip ID: ${trip._id}`);
 
+    // Send email notification to Mbusiseni
+    const mailOptions = {
+      from: '1mbusombhele@gmail.com', // Replace with your Gmail email
+      to: 'mbusisenimbhele@gmail.com', // Email to send the notification to
+      subject: 'Trip Approved Notification',
+      text: `A trip has been approved by a driver.\n\nTrip ID: ${trip._id}\nDriver: ${driver.name}\nPlate Number: ${plateNumber}`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending email:', error);
+        // Optionally, respond with an error message if email fails
+        return res.status(500).json({ message: 'Failed to send email notification.' });
+      } else {
+        console.log('Email sent:', info.response);
+      }
+    });
+
     res.status(200).json({ message: 'Trip approved', trip });
   } catch (error) {
     console.error('Error approving trip:', error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
 
-
-// Reject a Trip
 router.post('/reject/:tripId', ensureAuthenticated, ensureRole(['driver', 'admin']), async (req, res) => {
   try {
-    const { driverId, profilePicture, plateNumber } = req.body;
+    console.log('Received request to reject trip');
+    console.log(`Request params:`, req.params);  // Log request params
+    console.log(`Request body:`, req.body);      // Log request body
 
+    const { driverId, reason } = req.body; // Extract driverId and reason from request body
+    const tripId = req.params.tripId; // Extract tripId from request params
+
+    console.log(`Rejecting trip with ID: ${tripId} by driver ID: ${driverId}`);
+
+    // Find driver by ID
     const driver = await Driver.findById(driverId);
     if (!driver) {
+      console.log('Driver not found');
       return res.status(404).json({ message: 'Driver not found' });
     }
 
-    const trip = await Trip.findById(req.params.tripId).populate('rider');
+    // Find trip by ID and populate rider details
+    const trip = await Trip.findById(tripId).populate('rider');
     if (!trip) {
+      console.log('Trip not found');
       return res.status(404).json({ message: 'Trip not found' });
     }
 
-    trip.status = 'cancelled';
-    trip.approved = false;
+    // Update trip to 'rejected' status
+    trip.status = 'rejected';
+    trip.rejectionReason = reason || 'No reason provided';
     await trip.save();
 
-    // Log the driver's details
-    console.log('Driver Username:', driver.name);
-    console.log('Driver Number Plate:', plateNumber);
-    console.log('Driver Profile Picture:', profilePicture);
+    console.log(`Trip rejected by driver ${driver.name} (ID: ${driverId}) for trip ID: ${trip._id}`);
 
-    const io = req.app.get('socketio');
-    io.to(trip.rider._id.toString()).emit('tripRejected', {
-      trip,
-      message: 'Please try again, drivers are not available at the moment.',
-      driverUsername: driver.name,  // Include driver's username
-    });
+    // Send email notification
+    const mailOptions = {
+      from: '1mbusombhele@gmail.com',
+      to: 'mbusisenimbhele@gmail.com',
+      subject: 'Trip Rejected Notification',
+      text: `A trip has been rejected by a driver.\n\nTrip ID: ${trip._id}\nDriver: ${driver.name}\nRejection Reason: ${trip.rejectionReason}`,
+    };
 
-    res.status(200).json({ message: 'Trip rejected', trip });
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log('Rejection email sent:', info.response);
+      res.status(200).json({ message: 'Trip rejected and email sent', trip });
+    } catch (error) {
+      console.error('Error sending rejection email:', error.message);
+      res.status(500).json({ message: 'Failed to send rejection email notification.', error: error.message });
+    }
+
   } catch (error) {
     console.error('Error rejecting trip:', error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+
+
 
 // Cancel a Trip Route
 router.post('/cancel/:tripId', ensureAuthenticated, ensureRole(['rider', 'driver', 'admin']), async (req, res) => {

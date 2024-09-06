@@ -1,0 +1,68 @@
+
+
+<% var body = `
+
+<div class="main-content" id="main-content">
+    <header>
+    
+        <h2>Nice, we have a lot of orders 😁</h2>
+        <span class="date">Tuesday, 23 July 2024</span>
+    </header>
+    <div style="display:flex">
+    <button class="add-product-btn"><i class="fas fa-plus"></i> <a href="/foodFolder/products">Add Product</a></button>
+    <button class="add-product-btn"  style="background-color: gold; margin-left: 1rem;color: black;"><i class="fas fa-plus"></i> <a href="/foodFolder/orders">Place an order</a></button>
+</div>
+    <section class="statistics">
+        <div class="stat-card">
+            <h3><i class="fas fa-clipboard-list"></i> Total Orders</h3>
+            <p class="count">16</p>
+        </div>
+        <div class="stat-card" style="margin-left:1rem;">
+            <h3><i class="fas fa-users"></i> Number of Users</h3>
+            <p class="count">86</p>
+        </div>
+        <div class="stat-card" style="margin-left:1rem;">
+            <h3><i class="fas fa-box"></i> Total Products</h3>
+            <p class="count">8</p>
+        </div>
+    </section>
+    <section class="lists">
+        <div class="list-section">
+            <h3><i class="fas fa-list"></i> Order List</h3>
+            <input type="text" placeholder="Search orders by user or status">
+            <ul class="order-list">
+                <!-- Dummy data -->
+                <li class="order-item">
+                    <p class="order-name">John David</p>
+                    <p class="order-status ready">Ready</p>
+                </li>
+                <li class="order-item">
+                    <p class="order-name">Alice Johnson</p>
+                    <p class="order-status in-progress">In Progress</p>
+                </li>
+                <!-- <button class="add-product-btn"><i class="fas fa-plus"></i> Add Product</button> -->
+
+                <!-- Add more items here -->
+            </ul>
+        </div>
+
+        <div class="list-section">
+            <h3><i class="fas fa-money-bill-wave"></i> Payments</h3>
+            <input type="text" placeholder="Search payments by user or amount">
+            <ul class="payment-list">
+                <!-- Dummy data -->
+                <li class="payment-item">
+                    <p class="payment-name">Samuel Walker</p>
+                    <button class="pay-now"><i class="fas fa-rand-sign"></i> Pay Now</button>
+                </li>
+                <li class="payment-item">
+                    <p class="payment-name">Olivia King</p>
+                    <button class="pay-now"><i class="fas fa-rand-sign"></i> Pay Now</button>
+                </li>
+                <!-- Add more items here -->
+            </ul>
+        </div>
+    </section>
+</div>
+`; %>
+<%- include('layout', { title: 'Reviews', body: body }) %>

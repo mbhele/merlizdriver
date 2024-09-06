@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Driver Blocked</title>
+  <style>
+    body {
+      background-color: black;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      text-align: center;
+    }
+    .container {
+      width: 80%;
+      max-width: 500px;
+      background-color: #222;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+    h1, p {
+      color: gold;
+    }
+    .logout-btn {
+      background-color: #FFD700;
+      color: black;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      margin-top: 20px;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    .logout-btn:hover {
+      background-color: #FFA500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Account Temporarily Blocked</h1>
+    <p>Your account has been temporarily blocked by the admin. Please contact support for more information.</p>
+    <form action="/logout" method="POST">
+      <button type="submit" class="logout-btn">Sign Out</button>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<<<<<<< HEAD
+# Node modules
+node_modules/
+
+# Logs
+logs/
+*.log
+
+# Dependency directories
+/node_modules
+/bower_components
+
+# Environment variables
+.env
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+/dist
+/build
+
+=======
+node_modules
+.env
+>>>>>>> d788f9c (Recovered files and added to repository)

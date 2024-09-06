@@ -1,0 +1,104 @@
+.main-content {
+    margin-left: 250px;
+    padding: 20px;
+    width: calc(100% - 250px);
+    transition: margin-left 0.3s;
+    z-index: 1;
+}
+
+body.night-mode .main-content {
+    background-color: #181818;
+    color: #cfcfcf;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h2 {
+    margin: 0;
+}
+
+header .date {
+    color: #666;
+}
+
+body.night-mode header .date {
+    color: #a9a9a9;
+}
+
+.toggle-btn, .night-mode-btn {
+    background: #333;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 1.5rem;
+    border-radius: 4px;
+    margin-right: 10px;
+    transition: background 0.3s, color 0.3s;
+}
+
+body.night-mode .toggle-btn, body.night-mode .night-mode-btn {
+    background: #444;
+    color: #cfcfcf;
+}
+
+.statistics {
+    display: flex;
+    justify-content:center;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    margin-left: 15rem;
+    width: 30%;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    /* text-align: center; */
+    transition: background-color 0.3s, color 0.3s;
+    position: relative;
+    left: 30rem;
+}
+
+body.night-mode .stat-card {
+    background: #2a2a2a;
+    color: #cfcfcf;
+}
+
+.stat-card h3 {
+    margin: 0;
+    color: #333;
+}
+
+body.night-mode .stat-card h3 {
+    color: #cfcfcf;
+}
+
+.stat-card .count {
+    font-size: 2rem;
+    color: #333;
+}
+
+body.night-mode .stat-card .count {
+    color: #cfcfcf;
+}
+
+.lists {
+    display: flex;
+    justify-content: space-between;
+}
+
+.list-section {
+    width: 48%;
+}
+
+.list-section h3 {
+    margin: 0;
+    margin-bottom: 10px;
+    color: #333;
+}

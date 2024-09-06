@@ -1,0 +1,268 @@
+<style>
+    .order-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: space-between; /* Ensures spacing between cards */
+    }
+
+    .order-card {
+        background-color: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        width: 45%; /* Adjusted width for two cards per row */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        position: relative;
+        margin-top: 20px; /* Adds top padding */
+    }
+
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .order-header h3 {
+        margin: 0;
+    }
+
+    .order-status {
+        background-color: #eef1f7;
+        color: #5a67d8;
+        padding: 5px 10px;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .order-body {
+        margin-bottom: 20px;
+    }
+
+    .order-body table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .order-body th, .order-body td {
+        padding: 10px;
+        text-align: left;
+    }
+
+    .order-footer {
+        font-weight: bold;
+        text-align: right;
+        padding-top: 20px;
+    }
+
+    .tabs {
+        margin-bottom: 20px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .tab {
+        padding: 10px 20px;
+        background-color: #f1f1f1;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+
+    .tab.active {
+        background-color: #f0dcae;
+        color: white;
+    }
+
+    .tab:hover {
+        background-color: #ddd;
+    }
+
+    .order-status-update {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .status-dropdown {
+        padding: 5px 10px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 0.875rem;
+        color: #333;
+        background-color: #f9f9f9;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .status-dropdown:focus {
+        border-color: #5a67d8;
+        outline: none;
+    }
+
+    .save-status-btn {
+        padding: 5px 15px;
+        border-radius: 8px;
+        border: none;
+        background-color: #5a67d8;
+        color: white;
+        cursor: pointer;
+        font-size: 0.875rem;
+        transition: background-color 0.3s ease;
+    }
+
+    .save-status-btn:hover {
+        background-color: #434db4;
+    }
+
+    /* Media Query for Mobile Devices */
+    @media (max-width: 700px) {
+        .order-card {
+            width: 100%; /* Stacks cards vertically on mobile */
+        }
+    }
+</style>
+
+<%
+var ordersContent = `
+    <div class="tabs">
+        <div class="tab active" id="allTab">All</div>
+        <div class="tab" id="inProgressTab">In Progress</div>
+        <div class="tab" id="readyTab">Ready</div>
+        <div class="tab" id="completedTab">Completed</div>
+    </div>
+    <div class="order-container">
+        ${orders.map(order => {
+            const customerName = order.customer ? order.customer.username : 'Unknown Customer';
+            return `
+            <div class="order-card ${order.status.toLowerCase()}" data-order-id="${order._id}">
+                <div class="order-header">
+                    <h3>${customerName}</h3>
+                    <div class="order-status">${order.status}</div>
+                </div>
+                <div class="order-body">
+                    <p><strong>Order #${order._id}</strong> / ${order.type || 'Takeaway'}</p>
+                    <p>${new Date(order.createdAt).toDateString()} ${new Date(order.createdAt).toLocaleTimeString()}</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ITEMS</th>
+                                <th>QTY</th>
+                                <th>PRICE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${order.items.map(item => `
+                                <tr>
+                                    <td>${item.name}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>R${item.price.toFixed(2)}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="order-footer">
+                    TOTAL: R${order.totalAmount.toFixed(2)}
+                </div>
+                <div class="order-time">
+                    ${new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
+                <div class="order-status-update">
+                    <select class="status-dropdown" data-order-id="${order._id}">
+                        <option value="Pending" ${order.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                        <option value="In Progress" ${order.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                        <option value="Ready" ${order.status === 'Ready' ? 'selected' : ''}>Ready</option>
+                        <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                    </select>
+                    <button class="save-status-btn" data-order-id="${order._id}">Save</button>
+                </div>
+            </div>
+        `}).join('')}
+    </div>
+`;
+%>
+
+<%- include('layout', { title: 'Orders', header: 'Order Management', body: ordersContent }) %>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+ document.addEventListener('DOMContentLoaded', () => {
+    const socket = io();
+
+    const tabs = document.querySelectorAll('.tab');
+    const orderCards = document.querySelectorAll('.order-card');
+    const saveStatusButtons = document.querySelectorAll('.save-status-btn');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            const status = tab.textContent.toLowerCase().replace(' ', '');
+            orderCards.forEach(card => {
+                if (status === 'all') {
+                    card.style.display = 'block';
+                } else if (card.classList.contains(status)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    saveStatusButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+            const orderId = button.getAttribute('data-order-id');
+            const selectedStatus = document.querySelector(`.status-dropdown[data-order-id="${orderId}"]`).value;
+
+            console.log('Attempting to update status for order:', orderId);
+            console.log('Selected status:', selectedStatus);
+
+            try {
+                const response = await fetch(`/api/orders/update-status/${orderId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${yourAuthToken}` // Ensure this is correctly set
+                    },
+                    body: JSON.stringify({ status: selectedStatus })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Server response:', result);
+                    const orderCard = button.closest('.order-card');
+                    const orderStatusDiv = orderCard.querySelector('.order-status');
+                    orderStatusDiv.textContent = selectedStatus;
+                    orderCard.className = `order-card ${selectedStatus.toLowerCase()}`;
+                    alert('Order status updated successfully.');
+                } else {
+                    const errorData = await response.json();
+                    console.error('Failed to update order status:', errorData);
+                    alert(`Failed to update order status: ${errorData.message || 'Unknown error.'}`);
+                }
+            } catch (error) {
+                console.error('Error updating order status:', error);
+                alert('An error occurred while updating the order status.');
+            }
+        });
+    });
+
+    // Listen for real-time status updates from the server
+    socket.on('orderStatusUpdated', ({ orderId, status }) => {
+        console.log('Received real-time update for order:', orderId, 'Status:', status);
+        const orderCard = document.querySelector(`.order-card[data-order-id="${orderId}"]`);
+        if (orderCard) {
+            const orderStatusDiv = orderCard.querySelector('.order-status');
+            orderStatusDiv.textContent = status;
+            orderCard.className = `order-card ${status.toLowerCase()}`;
+        }
+    });
+});
+
+
+</script>

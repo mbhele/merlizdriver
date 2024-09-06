@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rides</title>
+    <link rel="stylesheet" href="/css/rides.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: gold;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .table-wrapper {
+            width: 40%;
+            background-color: #222;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            margin-top: 20px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background-color: #333;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        li:hover {
+            background-color: #555;
+        }
+        a {
+            color: gold;
+            text-decoration: none;
+            font-size: 18px;
+            flex-grow: 1;
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .company-name {
+            color: gold;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 24px;
+        }
+        .icon {
+            margin-left: 10px;
+        }
+        .number {
+            color: white;
+            font-size: 18px;
+            margin-right: 10px;
+        }
+        .ban-btn, .unban-btn {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .ban-btn:hover, .unban-btn:hover {
+            background-color: darkred;
+        }
+        .unban-btn {
+            background-color: green;
+        }
+        .unban-btn:hover {
+            background-color: darkgreen;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rides Booked by Customers</h1>
+        <div class="company-name">Merliz</div>
+        <div class="table-wrapper">
+            <ul>
+                <% riders.forEach((rider, index) => { %> <!-- Loop through riders instead of drivers -->
+                    <li>
+                        <span class="number"><%= index + 1 %>.</span>
+                        <a href="/admin/rides/<%= rider._id %>"><%= rider.username %></a>
+                        <% if (rider.status === 'banned') { %>
+                            <form action="/admin/unban/<%= rider._id %>" method="POST" style="display:inline;">
+                                <button type="submit" class="unban-btn">Unban</button>
+                            </form>
+                        <% } else { %>
+                            <form action="/admin/ban/<%= rider._id %>" method="POST" style="display:inline;">
+                                <button type="submit" class="ban-btn">Ban</button>
+                            </form>
+                        <% } %>
+                        <span class="icon"><i class="fas fa-arrow-right"></i></span>
+                    </li>
+                <% }) %>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

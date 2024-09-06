@@ -1,0 +1,39 @@
+
+    .orders-page .order-filters {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .orders-page .order-filters h2 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    .orders-page .filter-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    .orders-page .filter-btn {
+        padding: 10px 20px;
+        background-color: #f4f4f4;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .orders-page .filter-btn:hover {
+        background-color: #ddd;
+    }
+
+    .orders-page .filter-btn.active {
+        background-color: gold;
+        color: black;
+    }
+
+    .orders-page .order-list {
+        /* Add styles for the order list */
+    }

@@ -1,0 +1,271 @@
+<style>
+    .product-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+    .product-table thead {
+        background-color: #333;
+        color: white;
+    }
+
+    .product-table th, .product-table td {
+        padding: 10px;
+        border: 1px solid #ddd;
+        text-align: left;
+    }
+
+    .product-table tr {
+        cursor: pointer;
+    }
+
+    .product-table tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+    }
+
+    .modal-content {
+        background-color: #fefefe;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 500px;
+        border-radius: 8px;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+    }
+
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+        cursor: pointer;
+    }
+</style>
+
+<%
+var productsTable = `
+    <table class="product-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Image</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${products.map(product => `
+                <tr onclick="viewProduct('${product._id}')">
+                    <td>${product.name}</td>
+                    <td>${product.price}</td>
+                    <td><img src="${product.images[0]}" alt="${product.name}" style="width: 50px; height: auto;"></td>
+                    <td>${product.status}</td>
+                    <td>
+                        <button type="button" class="edit-button" data-id="${product._id}">Edit</button>
+                        <form action="/products/${product._id}?_method=DELETE" method="POST" style="display:inline;">
+                            <button type="submit">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            `).join('')}
+        </tbody>
+    </table>
+`;
+
+var body = `
+    <section>
+        <h1>Product Management</h1>
+        <button id="openCreatePopup">Create New Product</button>
+        ${productsTable}
+    </section>
+    <div id="createPopup" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeCreatePopup">&times;</span>
+            <h2>Create Product</h2>
+            <form action="/products" method="POST" enctype="multipart/form-data">
+                <label for="createName">Name:</label>
+                <input type="text" name="name" id="createName" required>
+                <label for="createDescription">Description:</label>
+                <textarea name="description" id="createDescription" required></textarea>
+                <label for="createCategory">Category:</label>
+                <input type="text" name="category" id="createCategory" required>
+                <label for="createPrice">Price:</label>
+                <input type="number" name="price" id="createPrice" required>
+                <label for="createQuantity">Quantity:</label>
+                <input type="number" name="quantity" id="createQuantity" required>
+                <label for="createStatus">Status:</label>
+                <input type="text" name="status" id="createStatus" required>
+                <label for="createImages">Images:</label>
+                <input type="file" name="images" id="createImages" multiple required>
+                <button type="submit">Create</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="editPopup" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeEditPopup">&times;</span>
+            <h2>Edit Product</h2>
+            <form id="editForm" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="_method" value="PUT">
+                <label for="editName">Name:</label>
+                <input type="text" name="name" id="editName" required>
+                <label for="editDescription">Description:</label>
+                <textarea name="description" id="editDescription" required></textarea>
+                <label for="editCategory">Category:</label>
+                <input type="text" name="category" id="editCategory" required>
+                <label for="editPrice">Price:</label>
+                <input type="number" name="price" id="editPrice" required>
+                <label for="editQuantity">Quantity:</label>
+                <input type="number" name="quantity" id="editQuantity" required>
+                <label for="editStatus">Status:</label>
+                <input type="text" name="status" id="editStatus" required>
+                <label for="editImages">Images:</label>
+                <input type="file" name="images" id="editImages" multiple>
+                <button type="submit">Update</button>
+                <button type="button" id="closeEditPopupButton">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="viewPopup" class="modal">
+        <div class="modal-content">
+            <span class="close" id="closeViewPopup">&times;</span>
+            <h2 id="viewName"></h2>
+            <p id="viewDescription"></p>
+            <p>Category: <span id="viewCategory"></span></p>
+            <p>Price: <span id="viewPrice"></span></p>
+            <p>Quantity: <span id="viewQuantity"></span></p>
+            <p>Status: <span id="viewStatus"></span></p>
+            <div id="viewImages" class="slideshow-container">
+                <a class="prev">&#10094;</a>  <!-- Left arrow -->
+                <a class="next">&#10095;</a>  <!-- Right arrow -->
+            </div>
+        </div>
+    </div>
+`;
+
+%>
+
+<%- include('layout', { title: 'Products', header: 'Product Management', body: body }) %>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const createPopup = document.getElementById('createPopup');
+        const editPopup = document.getElementById('editPopup');
+        const viewPopup = document.getElementById('viewPopup');
+        
+        const openCreatePopup = document.getElementById('openCreatePopup');
+        const closeCreatePopup = document.getElementById('closeCreatePopup');
+        const closeEditPopup = document.getElementById('closeEditPopup');
+        const closeEditPopupButton = document.getElementById('closeEditPopupButton');
+        const closeViewPopup = document.getElementById('closeViewPopup');
+        
+        openCreatePopup.onclick = () => createPopup.style.display = 'flex';
+        closeCreatePopup.onclick = () => createPopup.style.display = 'none';
+        closeEditPopup.onclick = () => editPopup.style.display = 'none';
+        closeEditPopupButton.onclick = () => editPopup.style.display = 'none';
+        closeViewPopup.onclick = () => viewPopup.style.display = 'none';
+
+        window.onclick = (event) => {
+            if (event.target === createPopup) createPopup.style.display = 'none';
+            if (event.target === editPopup) editPopup.style.display = 'none';
+            if (event.target === viewPopup) viewPopup.style.display = 'none';
+        };
+
+        document.querySelectorAll('.edit-button').forEach(button => {
+            button.addEventListener('click', function(event) {
+                event.stopPropagation();
+                const productId = this.dataset.id;
+                openEditPopup(productId);
+            });
+        });
+    });
+
+    function openEditPopup(id) {
+        fetch(`/products/${id}/json`)
+            .then(response => response.json())
+            .then(product => {
+                document.getElementById('editName').value = product.name;
+                document.getElementById('editDescription').value = product.description;
+                document.getElementById('editCategory').value = product.category;
+                document.getElementById('editPrice').value = product.price;
+                document.getElementById('editQuantity').value = product.quantity;
+                document.getElementById('editStatus').value = product.status;
+
+                const editImages = document.getElementById('editImages');
+                editImages.innerHTML = '';
+
+                product.images.forEach((image, index) => {
+                    const imgLabel = document.createElement('label');
+                    imgLabel.textContent = image;
+                    editImages.appendChild(imgLabel);
+                });
+
+                document.getElementById('editForm').action = `/products/${id}?_method=PUT`;
+                document.getElementById('editPopup').style.display = 'flex';
+            });
+    }
+
+    function viewProduct(id) {
+        fetch(`/products/${id}/json`)
+            .then(response => response.json())
+            .then(product => {
+                document.getElementById('viewName').textContent = product.name;
+                document.getElementById('viewDescription').textContent = product.description;
+                document.getElementById('viewCategory').textContent = product.category;
+                document.getElementById('viewPrice').textContent = product.price;
+                document.getElementById('viewQuantity').textContent = product.quantity;
+                document.getElementById('viewStatus').textContent = product.status;
+
+                const viewImages = document.getElementById('viewImages');
+                viewImages.innerHTML = '';
+
+                let currentSlide = 0;
+
+                product.images.forEach((image, index) => {
+                    const imgElement = document.createElement('img');
+                    imgElement.src = image;
+                    imgElement.style.width = '100%';
+                    imgElement.style.height = 'auto';
+                    imgElement.style.display = index === 0 ? 'block' : 'none';
+                    imgElement.classList.add('slide-image');
+                    viewImages.appendChild(imgElement);
+                });
+
+                function showSlide(index) {
+                    const slides = document.querySelectorAll('.slide-image');
+                    slides.forEach((slide, i) => {
+                        slide.style.display = i === index ? 'block' : 'none';
+                    });
+                }
+
+                viewImages.onclick = () => {
+                    currentSlide = (currentSlide + 1) % product.images.length;
+                    showSlide(currentSlide);
+                };
+
+                document.getElementById('viewPopup').style.display = 'flex';
+            });
+    }
+</script>

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seller Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+    }
+    h1 {
+      color: #333;
+    }
+    .dashboard {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 800px;
+      margin-top: 20px;
+    }
+    .logout-btn {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .logout-btn:hover {
+      background: #c0392b;
+    }
+  </style>
+</head>
+<body>
+  <h1>Seller Dashboard</h1>
+  <div class="dashboard">
+    <p>Welcome, <%= user.username %>!</p>
+    <p>Email: <%= user.email %></p>
+    <p>Role: <%= user.role %></p>
+  </div>
+  <form action="/seller/logout" method="POST">
+    <button type="submit" class="logout-btn">Logout</button>
+  </form>
+</body>
+</html>

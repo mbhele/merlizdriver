@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Driver Dashboard</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <h1>Welcome, <%= driver.userId.username %>!</h1>
+  <h2>Trip Requests</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Rider Name</th>
+        <th>Origin</th>
+        <th>Destination</th>
+        <th>Fare</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% trips.forEach(trip => { %>
+        <tr>
+          <td><%= trip.rider.name %></td>
+          <td><%= trip.origin.coordinates.join(', ') %></td>
+          <td><%= trip.destination.coordinates.join(', ') %></td>
+          <td>$<%= trip.fare %></td>
+          <td><%= trip.status %></td>
+          <td>
+            <% if (trip.status === 'requested') { %>
+              <form action="/api/trip/update/<%= trip._id %>" method="post" style="display:inline;">
+                <input type="hidden" name="_method" value="PUT">
+                <input type="hidden" name="status" value="accepted">
+                <button type="submit">Accept</button>
+              </form>
+              <form action="/api/trip/update/<%= trip._id %>" method="post" style="display:inline;">
+                <input type="hidden" name="_method" value="PUT">
+                <input type="hidden" name="status" value="rejected">
+                <button type="submit">Reject</button>
+              </form>
+            <% } %>
+            <form action="/api/trip/delete/<%= trip._id %>" method="post" style="display:inline;">
+              <input type="hidden" name="_method" value="DELETE">
+              <button type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    var socket = io();
+
+    socket.on('connect', function() {
+      console.log('Connected to server');
+    });
+
+    socket.on('disconnect', function() {
+      console.log('Disconnected from server');
+    });
+
+    socket.on('driverLocationUpdate', function(data) {
+      console.log('Driver location updated', data);
+    });
+  </script>
+</body>
+</html>

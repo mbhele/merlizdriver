@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Details</title>
+    <link rel="stylesheet" href="/css/Detailsrides.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Driver: <%= driver.username %> (<%= driver.email %>)</h1>
+        <h2>Trips</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Rider</th>
+                    <th>Origin</th>
+                    <th>Destination</th>
+                    <th>Status</th>
+                    <th>Fare</th>
+                    <th>Distance</th>
+                    <th>Duration</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% driver.rideHistory.forEach(trip => { %>
+                    <tr>
+                        <td><%= trip.rider.username %></td>
+                        <td><%= trip.origin %></td>
+                        <td><%= trip.destination %></td>
+                        <td class="<%= trip.approved ? 'approved' : 'pending' %>"><%= trip.status %></td>
+                        <td><%= trip.fare %></td>
+                        <td><%= trip.distance %> meters</td>
+                        <td><%= trip.duration %> seconds</td>
+                        <td>
+                            <% if (trip.status !== 'frozen') { %>
+                                <form action="/admin/freeze/<%= trip._id %>" method="POST" style="display:inline;">
+                                    <button type="submit" class="freeze-btn">Freeze</button>
+                                </form>
+                            <% } else { %>
+                                <form action="/admin/unfreeze/<%= trip._id %>" method="POST" style="display:inline;">
+                                    <button type="submit" class="unfreeze-btn">Unfreeze</button>
+                                </form>
+                            <% } %>
+                            <% if (!trip.approved && trip.status !== 'frozen') { %>
+                                <form action="/api/trip/approve/<%= trip._id %>" method="POST" style="display:inline;">
+                                    <button type="submit" class="approve-btn"><i class="fas fa-check"></i> Approve</button>
+                                </form>
+                                <form action="/api/trip/reject/<%= trip._id %>" method="POST" style="display:inline;">
+                                    <button type="submit" class="reject-btn"><i class="fas fa-times"></i> Reject</button>
+                                </form>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+
+        <h2>Chat</h2>
+        <div id="chat-container">
+            <div id="messages"></div>
+            <form id="chat-form">
+                <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" />
+                <button type="submit"><i class="fas fa-paper-plane"></i> Send</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Join room for each trip
+        <% driver.rideHistory.forEach(trip => { %>
+            socket.emit('joinRoom', { userId: '<%= driver._id %>', tripId: '<%= trip._id %>' });
+
+            // Fetch messages for each trip
+            fetch(`/api/chat/<%= trip._id %>`)
+                .then(response => response.json())
+                .then(messages => {
+                    messages.forEach(message => {
+                        displayMessage(message);
+                    });
+                });
+        <% }) %>
+
+        // Listen for chat messages
+        socket.on('chatMessage', (message) => {
+            displayMessage(message);
+        });
+
+        // Display message
+        function displayMessage(message) {
+            const messages = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.textContent = `${message.sender.username} (${message.senderRole}): ${message.message}`;
+            messages.appendChild(messageElement);
+        }
+
+        // Send chat message
+        const chatForm = document.getElementById('chat-form');
+        chatForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value;
+            if (message) {
+                <% driver.rideHistory.forEach(trip => { %>
+                    socket.emit('chatMessage', { tripId: '<%= trip._id %>', sender: '<%= driver._id %>', senderRole: 'driver', message });
+                <% }) %>
+                messageInput.value = '';
+            }
+        });
+    </script>
+</body>
+</html>

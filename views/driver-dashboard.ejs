@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Driver Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* Your CSS styles */
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #000;
+      color: #FFD700;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      padding-top: 2rem;
+      animation: fadeIn 1s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .container {
+      background: #1c1c1c;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      width: 90%;
+      max-width: 1400px;
+      box-sizing: border-box;
+      animation: scaleUp 0.5s ease-in-out;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    @keyframes scaleUp {
+      from { transform: scale(0.8); }
+      to { transform: scale(1); }
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 {
+      color: #FFD700;
+      margin: 0;
+    }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #FFD700;
+    }
+    .status-container, .trips-container, .chat-container {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .trips-chat-wrapper {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .trips-container, .chat-container {
+      flex: 1;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      color: #ffffff;
+    }
+    table thead tr {
+      background-color: #444;
+    }
+    table th, table td {
+      padding: 12px 15px;
+      border: 1px solid #555;
+      text-align: center;
+    }
+    .approved {
+      background-color: #155724;
+      color: #d4edda;
+    }
+    .pending {
+      background-color: #856404;
+      color: #fff3cd;
+    }
+    .approve-btn, .reject-btn, .status-btn, .logout-btn, #chat-form button {
+      background-color: #FFD700;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 14px;
+      margin: 5px;
+    }
+    .approve-btn:hover, .reject-btn:hover, .status-btn:hover, .logout-btn:hover, #chat-form button:hover {
+      background-color: #FFA500;
+    }
+    .status-btn {
+      align-self: center;
+    }
+    .logout-btn {
+      align-self: center;
+      font-size: 16px;
+    }
+    .online {
+      background-color: #28a745;
+      color: #fff;
+    }
+    .offline {
+      background-color: #dc3545;
+      color: #fff;
+    }
+    .chat-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #555;
+      padding-bottom: 10px;
+    }
+    .rider-list {
+      list-style-type: none;
+      padding: 0;
+      width: 200px;
+    }
+    .rider-list li {
+      cursor: pointer;
+      padding: 10px;
+      border-bottom: 1px solid #555;
+    }
+    .rider-list li:hover, .rider-list .active {
+      background-color: #333;
+    }
+    #messages {
+      height: 400px;
+      overflow-y: scroll;
+      margin-bottom: 10px;
+      border: 1px solid #555;
+      padding: 10px;
+      background-color: #333;
+      border-radius: 5px;
+      color: #FFD700;
+      display: flex;
+      flex-direction: column-reverse;
+    }
+    .message {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 10px;
+      padding: 10px;
+      border-radius: 20px;
+      max-width: 70%;
+      word-wrap: break-word;
+      position: relative;
+    }
+    .message.user {
+      background-color: #f1f0f0;
+      align-self: flex-start;
+      color: #000;
+    }
+    .message.driver {
+      background-color: #007bff;
+      align-self: flex-end;
+      color: #fff;
+    }
+    .message .text {
+      margin: 0;
+    }
+    .message .time {
+      font-size: 0.8rem;
+      position: absolute;
+      bottom: -15px;
+      right: 10px;
+      color: #ccc;
+    }
+    #chat-form {
+      display: flex;
+      gap: 10px;
+    }
+    #message-input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #555;
+      border-radius: 20px;
+      background-color: #333;
+      color: #FFD700;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">Logo</div>
+      <h1>Welcome, <%= driver.userId.username %>!</h1>
+    </div>
+    <div class="status-container">
+      <button id="status-btn" class="status-btn <%= driver.status %>">
+        <%= driver.status === 'online' ? 'Go Offline' : 'Go Online' %>
+      </button>
+    </div>
+    <div class="trips-chat-wrapper">
+      <div class="trips-container">
+        <h2>Trips</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Rider</th>
+              <th>Origin</th>
+              <th>Destination</th>
+              <th>Status</th>
+              <th>Fare</th>
+              <th>Distance</th>
+              <th>Duration</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if (trips.length > 0) { %>
+              <% trips.forEach(trip => { %>
+                <tr>
+                  <td><%= trip.rider.username %></td>
+                  <td><%= trip.origin %></td>
+                  <td><%= trip.destination %></td>
+                  <td class="<%= trip.approved ? 'approved' : 'pending' %>">
+                    <%= trip.status %>
+                  </td>
+                  <td><%= trip.fare %></td>
+                  <td><%= trip.distance %> meters</td>
+                  <td><%= trip.duration %> seconds</td>
+                  <td>
+                    <% if (!trip.approved) { %>
+                      <form action="/api/trip/approve/<%= trip._id %>" method="POST" style="display:inline;">
+                        <button type="submit" class="approve-btn">
+                          <i class="fas fa-check"></i> Approve
+                        </button>
+                      </form>
+                      <form action="/api/trip/reject/<%= trip._id %>" method="POST" style="display:inline;">
+                        <button type="submit" class="reject-btn">
+                          <i class="fas fa-times"></i> Reject
+                        </button>
+                      </form>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+            <% } else { %>
+              <tr>
+                <td colspan="8">No trips available</td>
+              </tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+      <div class="chat-container">
+        <div class="chat-header">
+          <h2>Chat</h2>
+          <ul class="rider-list">
+            <% 
+            const uniqueRiders = new Set();
+            trips.forEach(trip => { 
+              if (!uniqueRiders.has(trip.rider._id)) {
+                uniqueRiders.add(trip.rider._id);
+            %>
+              <li data-trip-id="<%= trip._id %>" data-rider-id="<%= trip.rider._id %>"><%= trip.rider.username %></li>
+            <% 
+              }
+            }) %>
+          </ul>
+        </div>
+        <div id="messages"></div>
+        <form id="chat-form">
+          <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off" />
+          <button type="submit"><i class="fas fa-paper-plane"></i> Send</button>
+        </form>
+      </div>
+    </div>
+    <form action="/logout" method="POST">
+      <button type="submit" class="logout-btn">Sign Out</button>
+    </form>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let currentTripId = null;
+
+    // Join room for each trip
+    <% trips.forEach(trip => { %>
+      socket.emit('joinRoom', { userId: '<%= driver.userId._id %>', tripId: '<%= trip._id %>' });
+    <% }) %>
+
+    // Handle rider selection for chat
+    document.querySelectorAll('.rider-list li').forEach(item => {
+      item.addEventListener('click', (event) => {
+        const tripId = event.target.getAttribute('data-trip-id');
+        const riderId = event.target.getAttribute('data-rider-id');
+        currentTripId = tripId;
+        
+        // Highlight selected rider
+        document.querySelectorAll('.rider-list li').forEach(li => li.classList.remove('active'));
+        event.target.classList.add('active');
+
+        // Fetch messages for the selected trip
+        fetch(`/api/chat/${tripId}`)
+          .then(response => response.json())
+          .then(messages => {
+            document.getElementById('messages').innerHTML = '';
+            messages.forEach(message => {
+              displayMessage(message);
+            });
+          })
+          .catch(error => console.error('Error fetching messages:', error));
+      });
+    });
+
+    // Listen for chat messages
+    socket.on('chatMessage', (message) => {
+      if (message.tripId === currentTripId) {
+        displayMessage(message);
+      }
+    });
+
+    // Display message
+    function displayMessage(message) {
+      const messages = document.getElementById('messages');
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('message', message.senderRole);
+      messageElement.innerHTML = `
+        <div class="text">${message.message}</div>
+        <div class="time">${new Date(message.timestamp).toLocaleTimeString()}</div>
+      `;
+      messages.prepend(messageElement);
+    }
+
+    // Send chat message
+    const chatForm = document.getElementById('chat-form');
+    chatForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const messageInput = document.getElementById('message-input');
+      const message = messageInput.value;
+      if (message && currentTripId) {
+        const sender = '<%= driver.userId._id %>';
+        const senderRole = 'driver';
+        const timestamp = new Date();
+
+        // Send message to the server
+        fetch('/api/chat/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ tripId: currentTripId, sender, senderRole, message, timestamp })
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.message === `Message sent to trip ${currentTripId}`) {
+            socket.emit('chatMessage', { tripId: currentTripId, sender, senderRole, message, timestamp });
+            messageInput.value = '';
+          }
+        })
+        .catch(error => console.error('Error sending message:', error));
+      }
+    });
+
+    // Toggle online/offline status
+    const statusBtn = document.getElementById('status-btn');
+    statusBtn.addEventListener('click', () => {
+      const currentStatus = '<%= driver.status %>';
+      const newStatus = currentStatus === 'online' ? 'offline' : 'online';
+
+      fetch(`/driver/status/<%= driver._id %>`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status: newStatus })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.message === 'Driver status updated') {
+          statusBtn.textContent = newStatus === 'online' ? 'Go Offline' : 'Go Online';
+          statusBtn.classList.toggle('online');
+          statusBtn.classList.toggle('offline');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/users.css"> <!-- Link the new CSS file -->
+    <link rel="stylesheet" href="/css/orders.css"> <!-- Link the new CSS file -->
+
+    <link rel="stylesheet" href="/css/food.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <div class="sidebar" id="sidebar">
+        <div class="logo-container">
+            <a href="/"><img src="/images/logo.png" alt="Logo" class="logo"></a>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="/foodFolder/home" class="nav-link"><i class="fas fa-tachometer-alt"></i> Home</a></li>
+                <li><a href="/foodFolder/dashboard" class="nav-link active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                <li><a href="/foodFolder/orders" class="nav-link"><i class="fas fa-shopping-cart"></i> Orders</a></li>
+                <li><a href="/foodFolder/products" class="nav-link"><i class="fas fa-box-open"></i> Products</a></li>
+                <li><a href="/foodFolder/users" class="nav-link"><i class="fas fa-users"></i> Users</a></li>
+                <li><a href="/foodFolder/reviews" class="nav-link"><i class="fas fa-star"></i> Reviews</a></li>
+                <!-- <li><a href="/foodFolder/staff" class="nav-link"><i class="fas fa-user-tie"></i> Staff Members</a></li> -->
+                <li><a href="/foodFolder/rides" class="nav-link"><i class="fas fa-car"></i> Rides</a></li>
+                <li><a href="/foodFolder/reviews" class="nav-link"><i class="fas fa-star"></i> Reviews</a></li>
+                <li><a href="/foodFolder/settings" class="nav-link"><i class="fas fa-cog"></i> Settings</a></li>
+            </ul>
+            
+        </nav>
+        
+        <div class="user-info">
+            <!-- <img src="/images/user.jpg" alt="User" class="user-avatar"> -->
+            <!-- <p>Rebecca Martins</p> -->
+            <!-- <p>Waitress</p> -->
+        </div>
+        <a href="" class="logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+    <div class="main-content" id="main-content">
+        <header>
+            <div>
+                <button class="toggle-btn" onclick="toggleSidebar()">☰</button>
+                <button class="night-mode-btn" onclick="toggleNightMode()"><i class="fas fa-moon"></i></button>
+            </div>
+            <h2 id="page-header"><%= header %></h2>
+            <span class="date"><%= new Date().toLocaleDateString() %></span>
+        </header>
+        <div class="content" id="page-content">
+            <%- body %>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const links = document.querySelectorAll('.nav-link');
+            links.forEach(link => {
+                link.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const url = this.getAttribute('href');
+                    loadPage(url);
+                });
+            });
+
+            function loadPage(url) {
+                fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(data => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(data, 'text/html');
+                    const newContent = doc.querySelector('#page-content').innerHTML;
+                    const newHeader = doc.querySelector('#page-header').innerText;
+                    document.getElementById('page-content').innerHTML = newContent;
+                    document.getElementById('page-header').innerText = newHeader;
+                    history.pushState(null, '', url);
+                })
+                .catch(err => console.error('Failed to load page:', err));
+            }
+
+            window.addEventListener('popstate', function() {
+                const url = location.pathname;
+                loadPage(url);
+            });
+        });
+
+        function toggleSidebar() {
+            document.body.classList.toggle('sidebar-open');
+        }
+
+        function toggleNightMode() {
+            document.body.classList.toggle('night-mode');
+        }
+    </script>
+</body>
+</html>

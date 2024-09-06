@@ -8,7 +8,7 @@
   <style>
     body {
       font-family: 'Roboto', sans-serif;
-      background-color: #000; /* Black background */
+      background-color: #000;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -21,10 +21,10 @@
       to { opacity: 1; }
     }
     form {
-      background: #000; /* Black background for form */
+      background: #000;
       padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); /* Gold shadow */
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
       width: 100%;
       max-width: 400px;
       box-sizing: border-box;
@@ -39,30 +39,31 @@
       display: block;
       margin-bottom: 8px;
       font-weight: bold;
-      color: #FFD700; /* Gold color */
+      color: #FFD700;
     }
     input[type="text"],
     input[type="email"],
     input[type="password"],
+    input[type="number"],
     select {
       width: calc(100% - 20px);
       padding: 10px;
       margin-bottom: 10px;
-      border: 1px solid #FFD700; /* Gold border */
-      background-color: #000; /* Black background */
-      color: #fff; /* White text */
+      border: 1px solid #FFD700;
+      background-color: #000;
+      color: #fff;
       border-radius: 4px;
       box-sizing: border-box;
     }
     input::placeholder {
-      color: #ccc; /* Light gray placeholder */
+      color: #ccc;
     }
     .btn {
       width: calc(100% - 20px);
       padding: 10px;
-      background: #FFD700; /* Gold background */
+      background: #FFD700;
       border: none;
-      color: #000; /* Black text */
+      color: #000;
       font-size: 16px;
       border-radius: 4px;
       cursor: pointer;
@@ -71,27 +72,36 @@
       display: inline-block;
     }
     .btn:hover {
-      background: #fff; /* White background on hover */
-      color: #000; /* Black text on hover */
+      background: #fff;
+      color: #000;
     }
     p {
       text-align: center;
-      color: #fff; /* White text */
+      color: #fff;
     }
     p a {
-      color: #FFD700; /* Gold color */
+      color: #FFD700;
       text-decoration: none;
       transition: color 0.3s ease;
     }
     p a:hover {
-      color: #fff; /* White on hover */
+      color: #fff;
     }
     h1 {
-      color: #FFD700; /* Gold color */
+      color: #FFD700;
       margin-bottom: 20px;
       font-size: 1.8rem;
       font-weight: 700;
-      text-align: center; /* Center-aligned heading */
+      text-align: center;
+    }
+    .feedback {
+      color: red;
+      font-size: 0.9em;
+      margin-top: -8px;
+      margin-bottom: 8px;
+    }
+    .feedback.valid {
+      color: #0f0;
     }
   </style>
 </head>
@@ -100,25 +110,47 @@
     <h1>Admin Registration</h1>
     <label for="username">Username:</label>
     <input type="text" id="username" name="username" placeholder="Enter your username" required>
+    
     <label for="email">Email:</label>
     <input type="email" id="email" name="email" placeholder="Enter your email" required>
+    <p id="emailFeedback" class="feedback"></p>
+    
     <label for="password">Password:</label>
     <input type="password" id="password" name="password" placeholder="Enter your password" required>
+    <p id="passwordFeedback" class="feedback"></p>
+    
     <div id="adminCodeField">
       <label for="adminCode">Admin Code:</label>
       <input type="text" id="adminCode" name="adminCode" placeholder="Enter admin code" required>
     </div>
+    
     <button type="submit" class="btn">Register</button>
-    <p><a href="https://merlizdriver.onrender.com/admin/admin-login" id="alreadyAc">Already have an account? Login here</a></p>
+    <p><a href="https://merlizholdings.co.za/admin/admin-login" id="alreadyAc">Already have an account? Login here</a></p>
   </form>
 
   <script>
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      
       const username = document.getElementById('username').value;
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       const adminCode = document.getElementById('adminCode').value;
+
+      if (!validateEmail(email)) {
+        document.getElementById('emailFeedback').innerText = 'Please enter a valid email address.';
+        return;
+      } else {
+        document.getElementById('emailFeedback').innerText = '';
+      }
+
+      if (!validatePassword(password)) {
+        document.getElementById('passwordFeedback').innerText = 'Password must be at least 8 characters, include uppercase, lowercase, number, and special character.';
+        return;
+      } else {
+        document.getElementById('passwordFeedback').innerText = 'Great! Strong password.';
+        document.getElementById('passwordFeedback').classList.add('valid');
+      }
 
       const body = { username, email, password, adminCode };
 
@@ -137,6 +169,17 @@
         alert(data.message || 'Registration failed');
       }
     });
+
+    function validateEmail(email) {
+      const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      return emailPattern.test(email);
+    }
+
+    function validatePassword(password) {
+      // Tough regex: At least 8 characters, 1 uppercase, 1 lowercase, 1 number, and 1 special character
+      const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      return passwordPattern.test(password);
+    }
   </script>
 </body>
 </html>

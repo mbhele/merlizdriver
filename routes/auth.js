@@ -90,7 +90,7 @@ router.post('/register', async (req, res) => {
         paymentMethods: newUser.paymentMethods,
         createdAt: newUser.createdAt,
       },
-      redirect: 'https://merlizdriver.onrender.com/admin/dashboard' // Added redirect URL
+      redirect: 'https://merlizholdings.co.za/admin/dashboard' // Added redirect URL
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

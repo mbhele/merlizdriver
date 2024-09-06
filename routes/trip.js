@@ -150,7 +150,7 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
           return res.status(200).json({ message: 'Trip already accepted by another driver.', trip: latestTrip });
         }
 
-        const driverAccepted = await notifyDriverAndWait(driver, trip, 6000, req, notifiedDrivers);
+        const driverAccepted = await notifyDriverAndWait(driver, trip, 20000, req, notifiedDrivers);
 
         if (driverAccepted) {
           trip.driver = driver._id;
@@ -271,13 +271,14 @@ router.post('/reject/:tripId', ensureAuthenticated, ensureRole(['driver', 'admin
 
     console.log(`Trip rejected by driver ${driver.name} (ID: ${driverId}) for trip ID: ${trip._id}`);
 
-    // Send email notification
     const mailOptions = {
       from: '1mbusombhele@gmail.com',
-      to: 'mbusisenimbhele@gmail.com',
+      to: 'mbusisenimbhele@gmail.com, merlizholdings@gmail.com', // Multiple recipients
       subject: 'Trip Rejected Notification',
       text: `A trip has been rejected by a driver.\n\nTrip ID: ${trip._id}\nDriver: ${driver.name}\nRejection Reason: ${trip.rejectionReason}`,
     };
+    
+    
 
     try {
       const info = await transporter.sendMail(mailOptions);

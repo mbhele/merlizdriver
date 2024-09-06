@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to Merliz</title>
+  <title>MerLiz Holdings (PTY) Ltd</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
@@ -29,7 +29,12 @@
       z-index: 1000;
     }
 
-    .navbar .logo {
+    .navbar .logo img { /* Styling for the logo image */
+      height: 40px; /* Adjust height as needed */
+      margin-right: 15px; /* Space between the logo and the title */
+    }
+
+    .navbar .title {
       font-size: 1.8rem;
       font-weight: 700;
       color: #fff;
@@ -70,8 +75,6 @@
       color: #fff;
       z-index: 1100; /* Ensure it is above the nav menu */
       margin-right: 1rem;
-
- 
     }
 
     @media (max-width: 768px) {
@@ -189,7 +192,10 @@
 
   <!-- Navigation Bar -->
   <header class="navbar">
-    <div class="logo">Merliz</div>
+    <div class="logo">
+      <!-- <img src="images/logo.png" alt="Merliz Logo"> Logo Image -->
+      <span class="title">Merliz</span>
+    </div>
     <div class="hamburger" onclick="toggleMenu()">
       <i class="fas fa-bars"></i>
     </div>
@@ -229,7 +235,7 @@
       <p>Merliz connects you with reliable rides, anytime, anywhere. Get picked up by a top-rated driver in minutes and enjoy a comfortable ride.</p>
       <a href="#" 
       class="btn-download" 
-      onclick="alert('Coming soon! call this number for detais:+27 66 375 8904'); return false;" 
+      onclick="alert('Coming soon! call this number for details:+27 66 375 8904'); return false;" 
       style="
         display: inline-block;
         background-color: #ffd700; /* Gold background */
@@ -243,11 +249,9 @@
         cursor: pointer; /* Pointer cursor on hover */
         box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Subtle shadow */
         transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transitions */
-      "
-   >
+      ">
       Get the app
-   </a>
-   
+      </a>
     </div>
   </section>
 

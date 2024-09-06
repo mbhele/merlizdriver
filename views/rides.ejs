@@ -12,11 +12,14 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
+            box-sizing: border-box;
         }
 
         h1 {
             color: #ffd700; /* Gold text */
             text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
         }
 
         .details-container {
@@ -58,6 +61,7 @@
             text-decoration: none;
             border-radius: 5px;
             text-align: center;
+            font-size: 1rem;
         }
 
         a.button:hover {
@@ -71,6 +75,49 @@
             margin: 10px 0;
             border-radius: 5px;
             box-shadow: 0 0 10px rgba(255, 215, 0, 0.8); /* Gold shadow */
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .details-container {
+                padding: 15px;
+            }
+
+            table {
+                font-size: 0.9rem;
+            }
+
+            a.button {
+                font-size: 0.9rem;
+                padding: 8px 16px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.2rem;
+            }
+
+            .details-container {
+                padding: 10px;
+            }
+
+            table {
+                font-size: 0.8rem;
+            }
+
+            th, td {
+                padding: 8px;
+            }
+
+            a.button {
+                font-size: 0.8rem;
+                padding: 6px 12px;
+            }
         }
     </style>
 </head>

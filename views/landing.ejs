@@ -69,6 +69,9 @@
       cursor: pointer;
       color: #fff;
       z-index: 1100; /* Ensure it is above the nav menu */
+      margin-right: 1rem;
+
+ 
     }
 
     @media (max-width: 768px) {
@@ -104,6 +107,7 @@
         position: absolute;
         top: 20px; /* Adjust as needed */
         right: 20px; /* Adjust as needed */
+        top: .7rem;
       }
 
       #signout {
@@ -193,6 +197,23 @@
       <% if (!isLoggedIn) { %>
         <a href="/admin/admin-login"><i class="fas fa-user-shield"></i> Admin Login</a>
       <% } else { %>
+        <a href="admin/dashboard" style="text-decoration: none;">
+          <button style="
+            background-color: #ffd700; /* Gold background */
+            color: #000000; /* Black text */
+            border: none; /* Remove default border */
+            padding: 10px 20px; /* Add padding */
+            border-radius: 5px; /* Rounded corners */
+            cursor: pointer; /* Pointer cursor on hover */
+            font-size: 1rem; /* Font size */
+            font-family: Arial, sans-serif; /* Font family */
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+            transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transitions */
+          ">
+            Dashboard
+          </button>
+        </a>
+        
         <span class="welcome-message">Welcome, <%= user.username %>!</span>
         <form action="/logout" method="post">
           <button type="submit" id="signout"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -206,7 +227,27 @@
     <div class="hero-content">
       <h1>Go wherever, whenever</h1>
       <p>Merliz connects you with reliable rides, anytime, anywhere. Get picked up by a top-rated driver in minutes and enjoy a comfortable ride.</p>
-      <a href="#" class="btn-download">Get the app</a>
+      <a href="#" 
+      class="btn-download" 
+      onclick="alert('Coming soon! call this number for detais:+27 66 375 8904'); return false;" 
+      style="
+        display: inline-block;
+        background-color: #ffd700; /* Gold background */
+        color: #000000; /* Black text */
+        text-decoration: none; /* Remove underline */
+        padding: 10px 20px; /* Add padding */
+        border-radius: 5px; /* Rounded corners */
+        font-size: 1rem; /* Font size */
+        font-family: Arial, sans-serif; /* Font family */
+        text-align: center; /* Center text */
+        cursor: pointer; /* Pointer cursor on hover */
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+        transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transitions */
+      "
+   >
+      Get the app
+   </a>
+   
     </div>
   </section>
 

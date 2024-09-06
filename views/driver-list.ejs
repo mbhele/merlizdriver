@@ -28,6 +28,10 @@
       box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); /* Gold shadow */
     }
 
+    .table-wrapper {
+      overflow-x: auto; /* Enable horizontal scrolling */
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -115,45 +119,63 @@
       margin-bottom: 15px;
       border: 2px solid #ffd700; /* Gold border */
     }
+
+    /* Responsive styles */
+    @media (max-width: 700px) {
+      .table-container {
+        padding: 10px;
+      }
+
+      table {
+        font-size: 0.8rem;
+      }
+
+      .view-details {
+        padding: 4px 8px;
+        font-size: 0.8rem;
+      }
+    }
   </style>
 </head>
 <body>
     <h1>Driver List</h1>
     <div class="table-container">
-      <table>
-        <thead>
-          <tr>
-            <th>Profile Picture</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Vehicle</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% drivers.forEach(driver => { %>
+      <div class="table-wrapper">
+        <table>
+          <thead>
             <tr>
-              <td>
-                <% if (driver.profilePicture && !driver.profilePicture.startsWith('file://')) { %>
-                  <img src="<%= driver.profilePicture %>" alt="Profile Picture" class="profile-picture">
-                <% } else { %>
-                  <img src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?w=740" alt="Default Profile" class="profile-picture">
-                <% } %>
-              </td>
-              <td><%= driver.name %></td>
-              <td><%= driver.email %></td>
-              <td><%= driver.phone %></td>
-              <td><%= driver.vehicle.make %> <%= driver.vehicle.model %> - <%= driver.vehicle.plateNumber %></td>
-              <td><%= driver.status %></td>
-              <td>
-                <button class="view-details" onclick="showDriverDetails('<%= driver._id %>', '<%= driver.name %>', '<%= driver.email %>', '<%= driver.phone %>', '<%= driver.vehicle.make %> <%= driver.vehicle.model %> - <%= driver.vehicle.plateNumber %>', '<%= driver.status %>', '<%= driver.profilePicture.startsWith('file://') ? '' : driver.profilePicture %>', [<%= driver.currentLocation.coordinates.join(', ') %>])">View Details</button>
-              </td>
+              <th>Profile Picture</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Vehicle</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
-          <% }); %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <% drivers.forEach(driver => { %>
+              <tr>
+                <td>
+                  <% if (driver.profilePicture && !driver.profilePicture.startsWith('file://')) { %>
+                    <img src="<%= driver.profilePicture %>" alt="Profile Picture" class="profile-picture">
+                  <% } else { %>
+                    <img src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?w=740" alt="Default Profile" class="profile-picture">
+                  <% } %>
+                </td>
+                <td><%= driver.name %></td>
+                <td><%= driver.email %></td>
+                <td><%= driver.phone %></td>
+                <td><%= driver.vehicle.make %> <%= driver.vehicle.model %> - <%= driver.vehicle.plateNumber %></td>
+                <td><%= driver.status %></td>
+                <td>
+                  <button class="view-details" onclick="showDriverDetails('<%= driver._id %>', '<%= driver.name %>', '<%= driver.email %>', '<%= driver.phone %>', '<%= driver.vehicle.make %> <%= driver.vehicle.model %> - <%= driver.vehicle.plateNumber %>', '<%= driver.status %>', '<%= driver.profilePicture.startsWith('file://') ? '' : driver.profilePicture %>', [<%= driver.currentLocation.coordinates.join(', ') %>])">View Details</button>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
     </div>
   
     <!-- Modal for Driver Details -->

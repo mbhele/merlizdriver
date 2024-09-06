@@ -13,11 +13,13 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
+            box-sizing: border-box;
         }
         h1 {
             color: gold;
             text-align: center;
             margin-bottom: 30px;
+            font-size: 2rem;
         }
         .container {
             width: 100%;
@@ -27,7 +29,8 @@
             flex-direction: column;
         }
         .table-wrapper {
-            width: 40%;
+            width: 100%;
+            max-width: 600px;
             background-color: #222;
             padding: 20px;
             border-radius: 10px;
@@ -37,6 +40,7 @@
         ul {
             list-style-type: none;
             padding: 0;
+            margin: 0;
         }
         li {
             background-color: #333;
@@ -47,6 +51,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            font-size: 1rem;
         }
         li:hover {
             background-color: #555;
@@ -54,10 +59,8 @@
         a {
             color: gold;
             text-decoration: none;
-            font-size: 18px;
             flex-grow: 1;
-            margin-left: 10px;
-            margin-right: 10px;
+            margin: 0 10px;
         }
         a:hover {
             text-decoration: underline;
@@ -66,33 +69,31 @@
             color: gold;
             text-align: center;
             margin-top: 10px;
-            font-size: 24px;
+            font-size: 1.5rem;
         }
-        .icon {
-            margin-left: 10px;
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+            .table-wrapper {
+                padding: 15px;
+            }
+            li {
+                font-size: 0.9rem;
+                padding: 12px;
+            }
         }
-        .number {
-            color: white;
-            font-size: 18px;
-            margin-right: 10px;
-        }
-        .ban-btn, .unban-btn {
-            background-color: red;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-        .ban-btn:hover, .unban-btn:hover {
-            background-color: darkred;
-        }
-        .unban-btn {
-            background-color: green;
-        }
-        .unban-btn:hover {
-            background-color: darkgreen;
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.2rem;
+            }
+            .table-wrapper {
+                padding: 10px;
+            }
+            li {
+                font-size: 0.8rem;
+                padding: 10px;
+            }
         }
     </style>
 </head>
@@ -106,16 +107,6 @@
                     <li>
                         <span class="number"><%= index + 1 %>.</span>
                         <a href="/admin/rides/<%= rider._id %>"><%= rider.username %></a>
-                        <% if (rider.status === 'banned') { %>
-                            <form action="/admin/unban/<%= rider._id %>" method="POST" style="display:inline;">
-                                <button type="submit" class="unban-btn">Unban</button>
-                            </form>
-                        <% } else { %>
-                            <form action="/admin/ban/<%= rider._id %>" method="POST" style="display:inline;">
-                                <button type="submit" class="ban-btn">Ban</button>
-                            </form>
-                        <% } %>
-                        <span class="icon"><i class="fas fa-arrow-right"></i></span>
                     </li>
                 <% }) %>
             </ul>

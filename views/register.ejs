@@ -8,7 +8,7 @@
   <style>
     body {
       font-family: 'Roboto', sans-serif;
-      background-color: #f4f4f4;
+      background-color: #000; /* Black background */
       display: flex;
       justify-content: center;
       align-items: center;
@@ -21,10 +21,10 @@
       to { opacity: 1; }
     }
     form {
-      background: #fff;
+      background: #000; /* Black background for form */
       padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); /* Gold shadow */
       width: 100%;
       max-width: 400px;
       box-sizing: border-box;
@@ -39,7 +39,7 @@
       display: block;
       margin-bottom: 8px;
       font-weight: bold;
-      color: #333;
+      color: #FFD700; /* Gold color */
     }
     input[type="text"],
     input[type="email"],
@@ -48,16 +48,21 @@
       width: calc(100% - 20px);
       padding: 10px;
       margin-bottom: 10px;
-      border: 1px solid #ccc;
+      border: 1px solid #FFD700; /* Gold border */
+      background-color: #000; /* Black background */
+      color: #fff; /* White text */
       border-radius: 4px;
       box-sizing: border-box;
+    }
+    input::placeholder {
+      color: #ccc; /* Light gray placeholder */
     }
     .btn {
       width: calc(100% - 20px);
       padding: 10px;
-      background: #000;
+      background: #FFD700; /* Gold background */
       border: none;
-      color: #FFD700;
+      color: #000; /* Black text */
       font-size: 16px;
       border-radius: 4px;
       cursor: pointer;
@@ -66,110 +71,56 @@
       display: inline-block;
     }
     .btn:hover {
-      background: #333;
-    }
-    .google-btn {
-      background: #000;
-      text-decoration: none;
-      color: #FFD700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .google-btn:hover {
-      background: #333;
-      color: #FFD700;
-    }
-    .google-btn i {
-      margin-right: 8px;
+      background: #fff; /* White background on hover */
+      color: #000; /* Black text on hover */
     }
     p {
       text-align: center;
+      color: #fff; /* White text */
     }
     p a {
-      color: #FFD700;
+      color: #FFD700; /* Gold color */
       text-decoration: none;
       transition: color 0.3s ease;
     }
     p a:hover {
-      color: #333;
+      color: #fff; /* White on hover */
     }
     h1 {
-      color: #333;
+      color: #FFD700; /* Gold color */
       margin-bottom: 20px;
       font-size: 1.8rem;
       font-weight: 700;
-    }
-
-    #alreadyAc{
-      color: #000;
+      text-align: center; /* Center-aligned heading */
     }
   </style>
 </head>
 <body>
   <form id="registerForm">
-    <h1>Register</h1>
+    <h1>Admin Registration</h1>
     <label for="username">Username:</label>
-    <input type="text" id="username" name="username" required>
+    <input type="text" id="username" name="username" placeholder="Enter your username" required>
     <label for="email">Email:</label>
-    <input type="email" id="email" name="email" required>
+    <input type="email" id="email" name="email" placeholder="Enter your email" required>
     <label for="password">Password:</label>
-    <input type="password" id="password" name="password" required>
-    <label for="role">Role:</label>
-    <select id="role" name="role" required>
-      <option value="customer">Customer</option>
-      <option value="seller">Seller</option>
-      <option value="admin">Admin</option>
-      <option value="driver">Driver</option>
-    </select>
-    <div id="adminCodeField" style="display: none;">
+    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+    <div id="adminCodeField">
       <label for="adminCode">Admin Code:</label>
-      <input type="text" id="adminCode" name="adminCode">
-    </div>
-    <div id="driverFields" style="display: none;">
-      <label for="phone">Phone:</label>
-      <input type="text" id="phone" name="phone">
-      <label for="vehicleMake">Vehicle Make:</label>
-      <input type="text" id="vehicleMake" name="vehicleMake">
-      <label for="vehicleModel">Vehicle Model:</label>
-      <input type="text" id="vehicleModel" name="vehicleModel">
-      <label for="plateNumber">Plate Number:</label>
-      <input type="text" id="plateNumber" name="plateNumber">
+      <input type="text" id="adminCode" name="adminCode" placeholder="Enter admin code" required>
     </div>
     <button type="submit" class="btn">Register</button>
     <p><a href="/" id="alreadyAc">Already have an account? Login here</a></p>
   </form>
 
   <script>
-    document.getElementById('role').addEventListener('change', function() {
-      const adminCodeField = document.getElementById('adminCodeField');
-      const driverFields = document.getElementById('driverFields');
-      if (this.value === 'admin') {
-        adminCodeField.style.display = 'block';
-        driverFields.style.display = 'none';
-      } else if (this.value === 'driver') {
-        adminCodeField.style.display = 'none';
-        driverFields.style.display = 'block';
-      } else {
-        adminCodeField.style.display = 'none';
-        driverFields.style.display = 'none';
-      }
-    });
-
     document.getElementById('registerForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const username = document.getElementById('username').value;
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      const role = document.getElementById('role').value;
       const adminCode = document.getElementById('adminCode').value;
-      const phone = document.getElementById('phone').value;
-      const vehicleMake = document.getElementById('vehicleMake').value;
-      const vehicleModel = document.getElementById('vehicleModel').value;
-      const plateNumber = document.getElementById('plateNumber').value;
-      const vehicle = { make: vehicleMake, model: vehicleModel, plateNumber };
 
-      const body = role === 'driver' ? { username, email, password, role, phone, vehicle } : { username, email, password, role, adminCode };
+      const body = { username, email, password, adminCode };
 
       const response = await fetch('/api/auth/register', {
         method: 'POST',

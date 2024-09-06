@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Login</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     body {
       font-family: 'Roboto', sans-serif;
-      background-color: #f4f4f4;
+      background-color: #000; /* Black background */
       display: flex;
       justify-content: center;
       align-items: center;
@@ -22,14 +21,14 @@
       to { opacity: 1; }
     }
     form {
-      background: #fff;
+      background: #000; /* Black background for form */
       padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); /* Gold shadow */
       width: 100%;
       max-width: 400px;
       box-sizing: border-box;
-      text-align: center;
+      text-align: left; /* Align text to the left */
       animation: scaleUp 0.5s ease-in-out;
     }
     @keyframes scaleUp {
@@ -40,70 +39,58 @@
       display: block;
       margin-bottom: 8px;
       font-weight: bold;
-      color: #333;
+      color: #FFD700; /* Gold color */
     }
     input[type="text"],
     input[type="password"] {
       width: calc(100% - 20px);
       padding: 10px;
-      margin-bottom: 10px;
-      border: 1px solid #ccc;
+      margin-bottom: 20px; /* Increased bottom margin */
+      border: 1px solid #FFD700; /* Gold border */
+      background-color: #000; /* Black background */
+      color: #fff; /* White text */
       border-radius: 4px;
       box-sizing: border-box;
+    }
+    input[type="text"]::placeholder,
+    input[type="password"]::placeholder {
+      color: #ccc; /* Light gray placeholder */
     }
     .btn {
       width: calc(100% - 20px);
       padding: 10px;
-      background: #000;
+      background: #FFD700; /* Gold background */
       border: none;
-      color: #FFD700;
+      color: #000; /* Black text */
       font-size: 16px;
       border-radius: 4px;
       cursor: pointer;
       transition: background 0.3s ease;
-      margin: 10px;
+      margin: 10px 0; /* Adjusted margin */
       display: inline-block;
     }
     .btn:hover {
-      background: #333;
-    }
-    .google-btn {
-      background: #000;
-      text-decoration: none;
-      color: #FFD700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .google-btn:hover {
-      background: #333;
-      color: #FFD700;
-    }
-    .google-btn i {
-      margin-right: 8px;
+      background: #fff; /* White background on hover */
+      color: #000; /* Black text on hover */
     }
     p {
       text-align: center;
+      color: #fff; /* White text */
     }
     p a {
-      color: #007bff;
+      color: #FFD700; /* Gold color */
       text-decoration: none;
       transition: color 0.3s ease;
     }
     p a:hover {
-      color: #0056b3;
+      color: #fff; /* White on hover */
     }
     h1 {
-      color: #333;
+      color: #FFD700; /* Gold color */
       margin-bottom: 20px;
       font-size: 1.8rem;
       font-weight: 700;
-    }
-    .btn-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
+      text-align: center; /* Center-aligned heading */
     }
   </style>
 </head>
@@ -111,12 +98,11 @@
   <form id="loginForm" action="/admin/admin-login" method="post">
     <h1>Admin Login</h1>
     <label for="username">Username:</label>
-    <input type="text" id="username" name="username" required aria-label="Username">
+    <input type="text" id="username" name="username" placeholder="Enter your username" required aria-label="Username">
     <label for="password">Password:</label>
-    <input type="password" id="password" name="password" required aria-label="Password">
+    <input type="password" id="password" name="password" placeholder="Enter your password" required aria-label="Password">
     <div class="btn-container">
       <button type="submit" class="btn" aria-label="Login Button">Login</button>
-      <a href="/auth/google" class="btn google-btn" aria-label="Login with Google"><i class="fab fa-google"></i>Login with Google</a>
     </div>
     <p><a href="/request-reset">Forgot Password?</a></p>
     <p><a href="/register">Don't have an account? Register here</a></p>

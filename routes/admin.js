@@ -4,6 +4,7 @@ const passport = require('passport');  // Import only for login functionality
 const User = require('../models/User');
 const Trip = require('../models/Trip');
 const Driver = require('../models/Driver');  // Correctly import the Driver model
+const { ensureAuthenticated, ensureRole } = require('../middleware/auth'); // Import the middleware
 
 // Admin Login GET handler (renders the login page)
 router.get('/admin-login', (req, res) => {
@@ -216,7 +217,19 @@ router.delete('/delete/:id', async (req, res) => {
 
 // Logout Route
 router.post('/logout', (req, res) => {
-  res.json({ message: 'Logout functionality will be added later' });
+  req.logout(function(err) {
+    if (err) {
+      return res.status(500).json({ message: 'Error logging out' });
+    }
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: 'Error destroying session' });
+      }
+      // Redirect to the admin login page after logout
+      res.redirect('/admin/admin-login');
+    });
+  });
 });
+
 
 module.exports = router;

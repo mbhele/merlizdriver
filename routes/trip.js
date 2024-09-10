@@ -127,9 +127,11 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
     const io = req.app.get('socketio');
 
     while (maxAttempts > 0) {
+      // Fetch drivers who are either online or idle and available
       const drivers = await Driver.find({
-        status: 'online',
-        availability: true
+        status: { $in: ['online', 'idle'] },  // Include both 'online' and 'idle' drivers
+        availability: true,
+        _id: { $nin: Array.from(notifiedDrivers) }  // Filter out drivers who have already been notified
       });
 
       if (drivers.length === 0) {
@@ -139,8 +141,9 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
 
       console.log('Drivers found:', drivers.length);
 
+      // Notify only the drivers found in the query
       for (const driver of drivers) {
-        console.log(`Sending trip request to driver ${driver._id}...`);
+        console.log(`Sending trip request to driver ${driver._id} with status ${driver.status}...`);
 
         // Check if the trip is already accepted by another driver
         const latestTrip = await Trip.findById(trip._id);
@@ -150,7 +153,8 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
           return res.status(200).json({ message: 'Trip already accepted by another driver.', trip: latestTrip });
         }
 
-        const driverAccepted = await notifyDriverAndWait(driver, trip, 20000, req, notifiedDrivers);
+        // Ensure that only these drivers are notified
+        const driverAccepted = await notifyDriverAndWait(driver, trip, 6000, req, notifiedDrivers);
 
         if (driverAccepted) {
           trip.driver = driver._id;
@@ -167,6 +171,9 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
 
           console.log('Trip confirmed and driver assigned:', driver._id);
           return res.status(200).json({ message: 'Trip confirmed', trip });
+        } else {
+          // Add driver to the notified set to prevent reprocessing
+          notifiedDrivers.add(driver._id.toString());
         }
       }
 
@@ -188,6 +195,9 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
+
+
 
 
 router.post('/approve/:tripId', ensureAuthenticated, ensureRole(['driver', 'admin']), async (req, res) => {
@@ -245,40 +255,37 @@ router.post('/reject/:tripId', ensureAuthenticated, ensureRole(['driver', 'admin
     console.log(`Request params:`, req.params);  // Log request params
     console.log(`Request body:`, req.body);      // Log request body
 
-    const { driverId, reason } = req.body; // Extract driverId and reason from request body
-    const tripId = req.params.tripId; // Extract tripId from request params
+    const { driverId, reason } = req.body;
+    const tripId = req.params.tripId;
 
     console.log(`Rejecting trip with ID: ${tripId} by driver ID: ${driverId}`);
 
-    // Find driver by ID
     const driver = await Driver.findById(driverId);
     if (!driver) {
       console.log('Driver not found');
       return res.status(404).json({ message: 'Driver not found' });
     }
 
-    // Find trip by ID and populate rider details
     const trip = await Trip.findById(tripId).populate('rider');
     if (!trip) {
       console.log('Trip not found');
       return res.status(404).json({ message: 'Trip not found' });
     }
 
-    // Update trip to 'rejected' status
+    // Update trip status to rejected
     trip.status = 'rejected';
     trip.rejectionReason = reason || 'No reason provided';
     await trip.save();
 
     console.log(`Trip rejected by driver ${driver.name} (ID: ${driverId}) for trip ID: ${trip._id}`);
 
+    // Send email notification to Mbusiseni
     const mailOptions = {
       from: '1mbusombhele@gmail.com',
-      to: 'mbusisenimbhele@gmail.com, merlizholdings@gmail.com', // Multiple recipients
+      to: 'mbusisenimbhele@gmail.com',
       subject: 'Trip Rejected Notification',
       text: `A trip has been rejected by a driver.\n\nTrip ID: ${trip._id}\nDriver: ${driver.name}\nRejection Reason: ${trip.rejectionReason}`,
     };
-    
-    
 
     try {
       const info = await transporter.sendMail(mailOptions);
@@ -294,7 +301,6 @@ router.post('/reject/:tripId', ensureAuthenticated, ensureRole(['driver', 'admin
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
 
 
 

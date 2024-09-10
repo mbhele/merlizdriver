@@ -328,30 +328,55 @@ router.get('/status/:driverId', async (req, res) => {
   }
 });
 
-// Update Driver Status and Location
-router.put('/status/:driverId', async (req, res) => {
+// Update Driver Status and Location with Authentication and Real-Time Updates
+// Update Driver Status and Location with Authentication and Real-Time Updates
+router.put('/status/:driverId', ensureAuthenticated, ensureRole(['driver', 'admin']), async (req, res) => {
   try {
-    const driverId = req.params.driverId;
-    const { status, coordinates } = req.body; // Expect coordinates in the body
+    const driverId = req.params.driverId; // Extract driver ID from URL parameters
+    const { status, coordinates } = req.body; // Extract status and coordinates from request body
 
+    // Prepare the update data object
     const updateData = { status };
-    if (coordinates && coordinates.length === 2) {
+
+    // Set the driver's location to [0, 0] if status is "busy", "on_trip", or "offline"
+    if (['busy', 'on_trip', 'offline'].includes(status)) {
+      updateData.currentLocation = {
+        type: 'Point',
+        coordinates: [0, 0],
+      };
+    } else if (coordinates && Array.isArray(coordinates) && coordinates.length === 2) {
+      // Update coordinates only if valid and the status is not one of the mentioned statuses
       updateData.currentLocation = {
         type: 'Point',
         coordinates,
       };
     }
 
+    // Find the driver by ID and update their status and location
     const driver = await Driver.findByIdAndUpdate(driverId, updateData, { new: true });
+
     if (!driver) {
       return res.status(404).json({ message: 'Driver not found' });
     }
 
+    // Emit a real-time event to notify about the driver's status and location change
+    const io = req.app.get('socketio'); // Get the Socket.IO instance from the Express app
+    io.emit('driverStatusChange', { 
+      driverId: driver._id.toString(), 
+      status: driver.status, 
+      currentLocation: driver.currentLocation?.coordinates 
+    });
+
     res.status(200).json({ message: 'Driver status and location updated', status: driver.status, currentLocation: driver.currentLocation });
   } catch (error) {
+    console.error('Error updating driver status and location:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
+
+
+
 
 
 // Delete All Drivers (Admin only)

@@ -9,7 +9,7 @@ const TripSchema = new Schema({
   destination: { type: String, required: true }, // Store as a string address
   status: {
     type: String,
-    enum: ['requested', 'pending', 'accepted', 'in_progress', 'completed', 'cancelled', 'frozen', 'approved'],
+    enum: ['requested', 'pending', 'accepted', 'in_progress', 'completed', 'cancelled', 'frozen', 'approved', 'rejected'], // Add 'rejected' here
     default: 'requested'
   },
   fare: { type: Number },
@@ -20,4 +20,3 @@ const TripSchema = new Schema({
 
 const Trip = mongoose.model('Trip', TripSchema);
 module.exports = Trip;
-

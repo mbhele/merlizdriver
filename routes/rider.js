@@ -1,14 +1,14 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+// const express = require('express');
+// const bcrypt = require('bcryptjs');
+// const jwt = require('jsonwebtoken');
 const Rider = require('../models/Rider');
 const User = require('../models/User');
-const Trip = require('../models/Trip');
-// const { ensureAuthenticated } = require('../middleware/auth');
 const { ensureAuthenticated, ensureRole } = require('../middleware/auth');
 
 const router = express.Router();
-
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
 // Function to generate JWT token
@@ -19,6 +19,9 @@ const generateToken = (user) => {
     { expiresIn: '3h' }
   );
 };
+
+
+
 
 router.post('/login', async (req, res) => {
   console.log('Request body:', req.body);  // Log the incoming request body
@@ -66,34 +69,28 @@ router.post('/login', async (req, res) => {
 });
 
 
-
-// Register rider
 router.post('/register', async (req, res) => {
   const { username, password, email, role, phone, profilePicture } = req.body;
 
   try {
-    // Check if the email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ error: 'Email already exists' });
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create a new user
     const newUser = new User({
       username,
       password: hashedPassword,
       email,
-      role: role || 'customer', // Default to customer if no role is provided
+      role: role || 'rider', // Default to 'rider' if no role is provided
       phone,
       profilePicture,
     });
     await newUser.save();
 
-    // If the role is 'rider', create a Rider document
-    if (role === 'rider') {
+    if (role === 'rider' || !role) {
       const newRider = new Rider({
         userId: newUser._id,
         username,
@@ -103,11 +100,11 @@ router.post('/register', async (req, res) => {
         rideHistory: [],
       });
       await newRider.save();
+      console.log('Rider created with userId:', newUser._id);
     }
 
     const token = generateToken(newUser);
 
-    // Return the user details along with the token
     return res.json({
       message: 'User registered successfully',
       token,
@@ -126,9 +123,11 @@ router.post('/register', async (req, res) => {
       },
     });
   } catch (err) {
+    console.error('Registration error:', err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // Get rider by Rider's _id
 router.get('/:id', ensureAuthenticated, async (req, res) => {
@@ -144,32 +143,42 @@ router.get('/:id', ensureAuthenticated, async (req, res) => {
   }
 });
 
-// Update rider profile
 router.put('/:id', ensureAuthenticated, async (req, res) => {
+  const session = await User.startSession();
+  session.startTransaction();
+
   try {
     const { username, email, phone, profilePicture } = req.body;
+    console.log('Received update request for ID:', req.params.id);  // Debugging
 
-    // Update User document
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       { username, email, phone, profilePicture },
-      { new: true }
+      { new: true, session }
     );
 
     if (!updatedUser) {
+      console.log('User not found for ID:', req.params.id);  // Debugging
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update Rider document
     const updatedRider = await Rider.findOneAndUpdate(
       { userId: req.params.id },
       { username, phone, profilePicture },
-      { new: true }
+      { new: true, session }
     );
 
     if (!updatedRider) {
+      console.log('Rider not found for User ID:', req.params.id);  // Debugging
+      await session.abortTransaction();
+      session.endSession();
       return res.status(404).json({ message: 'Rider not found' });
     }
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.status(200).json({ 
       message: 'Profile updated successfully', 
@@ -179,9 +188,14 @@ router.put('/:id', ensureAuthenticated, async (req, res) => {
       },
     });
   } catch (error) {
+    console.error('Error updating profile:', error);  // Debugging
+    await session.abortTransaction();
+    session.endSession();
     res.status(500).json({ error: 'Failed to update profile' });
   }
 });
+
+
 
 // Logout route for rider
 router.post('/logout', ensureAuthenticated, (req, res) => {

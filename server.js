@@ -46,7 +46,10 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
-app.use(cors({ origin: 'http://192.168.43.59:5000', credentials: true }));
+app.use(cors({
+  origin: 'https://merlizholdings.co.za', // Update this to your actual domain
+  credentials: true,
+}));
 
 // MongoDB connection
 mongoose.connect(process.env.DB_URL)

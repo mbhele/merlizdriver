@@ -171,7 +171,7 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
         }
 
         // Ensure that only these drivers are notified
-        const driverAccepted = await notifyDriverAndWait(driver, trip, 3000, req, notifiedDrivers);
+        const driverAccepted = await notifyDriverAndWait(driver, trip, 12000, req, notifiedDrivers);
 
         if (driverAccepted) {
           trip.driver = driver._id;

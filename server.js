@@ -90,7 +90,7 @@ app.post('/send-email', (req, res) => {
 
   const mailOptions = {
     from: '1mbusombhele@gmail.com', // Your email
-    to, // Recipient email
+    to: 'mbusisenimbhele@gmail.com,merlizholdings@gmail.com', // Email to send the notification to
     subject, // Subject line
     text, // Plain text body
   };

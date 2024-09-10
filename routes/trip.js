@@ -91,6 +91,7 @@ async function notifyDriverAndWait(driver, trip, timeout, req, notifiedDrivers) 
 }
 
 // Server-side route handling
+// Server-side route handling
 router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, res) => {
   try {
     const { rider, origin, destination, distance, fare, duration } = req.body;
@@ -120,6 +121,22 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
       console.error('Error saving trip:', saveError.message);
       return res.status(500).json({ error: 'Failed to save trip data' });
     }
+
+    // Send an email notification after booking the trip
+    const mailOptions = {
+      from: '1mbusombhele@gmail.com', // Your Gmail email
+      to: 'mbusiseni.mbhele@gmail.com, merlizholdings@gmail.com', // Multiple recipients separated by a comma
+      subject: 'New Trip Booking Notification',
+      text: `A new trip has been booked.\n\nTrip Details:\n- Rider: ${rider}\n- Origin: ${origin}\n- Destination: ${destination}\n- Fare: ${fare}`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error sending email:', error);
+      } else {
+        console.log('Email sent:', info.response);
+      }
+    });
 
     console.log('Searching for available drivers...');
     let maxAttempts = 6;
@@ -154,7 +171,7 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
         }
 
         // Ensure that only these drivers are notified
-        const driverAccepted = await notifyDriverAndWait(driver, trip, 6000, req, notifiedDrivers);
+        const driverAccepted = await notifyDriverAndWait(driver, trip, 3000, req, notifiedDrivers);
 
         if (driverAccepted) {
           trip.driver = driver._id;
@@ -199,7 +216,6 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
 
 
 
-
 router.post('/approve/:tripId', ensureAuthenticated, ensureRole(['driver', 'admin']), async (req, res) => {
   try {
     const { driverId, profilePicture, plateNumber } = req.body;
@@ -226,7 +242,7 @@ router.post('/approve/:tripId', ensureAuthenticated, ensureRole(['driver', 'admi
     // Send email notification to Mbusiseni
     const mailOptions = {
       from: '1mbusombhele@gmail.com', // Replace with your Gmail email
-      to: 'mbusisenimbhele@gmail.com', // Email to send the notification to
+      to: 'mbusisenimbhele@gmail.com,merlizholdings@gmail.com', // Email to send the notification to
       subject: 'Trip Approved Notification',
       text: `A trip has been approved by a driver.\n\nTrip ID: ${trip._id}\nDriver: ${driver.name}\nPlate Number: ${plateNumber}`,
     };
@@ -282,7 +298,7 @@ router.post('/reject/:tripId', ensureAuthenticated, ensureRole(['driver', 'admin
     // Send email notification to Mbusiseni
     const mailOptions = {
       from: '1mbusombhele@gmail.com',
-      to: 'mbusisenimbhele@gmail.com',
+      to: 'mbusisenimbhele@gmail.com,merlizholdings@gmail.com', // Email to send the notification to
       subject: 'Trip Rejected Notification',
       text: `A trip has been rejected by a driver.\n\nTrip ID: ${trip._id}\nDriver: ${driver.name}\nRejection Reason: ${trip.rejectionReason}`,
     };
@@ -317,7 +333,7 @@ router.post('/cancel/:tripId', ensureAuthenticated, ensureRole(['rider', 'driver
     }
 
     if (!driverId) {
-      console.error('Driver ID is missing');
+      console.error('Drivers are not available');
       return res.status(400).json({ message: 'Driver ID is required' });
     }
 

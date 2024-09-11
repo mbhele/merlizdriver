@@ -82,8 +82,8 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false, // Use TLS
   auth: {
-    user: '1mbusombhele@gmail.com', // Replace with your Gmail email
-    pass: 'rxyb eclg vpdy bghh', // Replace with your App Password
+    user: '1mbusombhele@gmail.com', // 
+    pass: 'rxyb eclg vpdy bghh', // 
   },
 });
 
@@ -94,8 +94,8 @@ app.post('/send-email', (req, res) => {
   const mailOptions = {
     from: '1mbusombhele@gmail.com', // Your email
     to: 'mbusisenimbhele@gmail.com,merlizholdings@gmail.com', // Email to send the notification to
-    subject, // Subject line
-    text, // Plain text body
+    subject, // 
+    text, // 
   };
 
   transporter.sendMail(mailOptions, (error, info) => {

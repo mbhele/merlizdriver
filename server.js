@@ -93,15 +93,12 @@ app.post('/send-email', (req, res) => {
 
   const mailOptions = {
     from: '1mbusombhele@gmail.com', // Your email
-<<<<<<< HEAD
     to: 'mbusisenimbhele@gmail.com', // Email to send the notification to
     subject, // Subject line
     text, // Plain text body
-=======
     to: 'mbusisenimbhele@gmail.com,merlizholdings@gmail.com', // Email to send the notification to
     subject, // 
     text, // 
->>>>>>> dd57bd14acc01ddb7cc719a4f3a0e519fd8bfcb5
   };
 
   transporter.sendMail(mailOptions, (error, info) => {

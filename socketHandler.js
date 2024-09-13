@@ -4,7 +4,8 @@ const Trip = require('./models/Trip'); // Ensure this path is correct to import 
 const axios = require('axios');
 require('dotenv').config(); // Import dotenv for environment variables
 
-const GOOGLE_PLACES_API_KEY = process.env.GOOGLE_PLACES_API_KEY; // Use environment variable for API key
+const GOOGLE_PLACES_API_KEY = 'AIzaSyAG8YFYpxHJSBvM7bnoWl2tNxDF05Usfow';
+
 
 function initializeSocket(server) {
   const io = new Server(server, {

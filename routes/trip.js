@@ -125,7 +125,7 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
     // Send an email notification after booking the trip
     const mailOptions = {
       from: '1mbusombhele@gmail.com', // Your Gmail email
-      to: 'mbusiseni.mbhele@gmail.com, merlizholdings@gmail.com', // Multiple recipients separated by a comma
+      to: 'mbusiseni.mbhele@gmail.com', // Multiple recipients separated by a comma
       subject: 'New Trip Booking Notification',
       text: `A new trip has been booked.\n\nTrip Details:\n- Rider: ${rider}\n- Origin: ${origin}\n- Destination: ${destination}\n- Fare: ${fare}`,
     };

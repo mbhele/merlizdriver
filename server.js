@@ -47,7 +47,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 app.use(cors({
-  origin: 'https://merlizholdings.co.za', // Update this to your actual domain
+  origin: 'http://192.168.43.59:5000', // Update this to your actual domain
   credentials: true,
 }));
 
@@ -93,7 +93,7 @@ app.post('/send-email', (req, res) => {
 
   const mailOptions = {
     from: '1mbusombhele@gmail.com', // Your email
-    to: 'mbusisenimbhele@gmail.com,merlizholdings@gmail.com', // Email to send the notification to
+    to: 'mbusisenimbhele@gmail.com', // Email to send the notification to
     subject, // Subject line
     text, // Plain text body
   };

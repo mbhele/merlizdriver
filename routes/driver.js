@@ -57,13 +57,14 @@ const calculateDistance = (coord1, coord2) => {
   return d; // Distance in km
 };
 
-// Driver Registration
-router.post('/register', async (req, res) => {
+// Driver Registration with Image Uploads
+router.post('/register', upload.fields([{ name: 'licenseFront', maxCount: 1 }, { name: 'licenseBack', maxCount: 1 }]), async (req, res) => {
   try {
     const { username, email, password, phone, vehicle } = req.body;
+    const files = req.files;
 
-    if (!username || !email || !password || !phone || !vehicle) {
-      return res.status(400).json({ error: 'All fields are required' });
+    if (!username || !email || !password || !phone || !vehicle || !files.licenseFront || !files.licenseBack) {
+      return res.status(400).json({ error: 'All fields, including license images, are required' });
     }
 
     const existingUser = await User.findOne({ email });
@@ -81,6 +82,23 @@ router.post('/register', async (req, res) => {
     });
     await newUser.save();
 
+    // Upload images to Cloudinary
+    const uploadImage = (fileBuffer) => {
+      return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { resource_type: 'image' },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result.secure_url);
+          }
+        );
+        streamifier.createReadStream(fileBuffer).pipe(stream);
+      });
+    };
+
+    const licenseFrontUrl = await uploadImage(files.licenseFront[0].buffer);
+    const licenseBackUrl = await uploadImage(files.licenseBack[0].buffer);
+
     const newDriver = new Driver({
       userId: newUser._id,
       name: username,
@@ -88,17 +106,21 @@ router.post('/register', async (req, res) => {
       phone,
       vehicle,
       availability: true,
-      status: 'offline',
+      driverStatus: 'offline',
       currentLocation: {
         type: 'Point',
         coordinates: [0, 0] // Initial default coordinates
-      }
+      },
+      licenseFront: licenseFrontUrl,
+      licenseBack: licenseBackUrl
     });
+
     await newDriver.save();
 
     const token = generateToken(newUser);
     res.status(201).json({ message: 'Driver registered successfully', token, driver: newDriver });
   } catch (error) {
+    console.error('Error in registration route:', error);
     res.status(500).json({ error: error.message });
   }
 });

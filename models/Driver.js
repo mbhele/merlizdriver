@@ -16,13 +16,20 @@ const DriverSchema = new Schema({
     type: { type: String, enum: ['Point'], required: true },
     coordinates: { type: [Number], default: [0, 0], required: true } // Set a default location or make it optional initially
   },
-  status: { 
-    type: String, 
+  status: {  // Keeping this unchanged as you requested
+    type: String,
     enum: ['online', 'offline', 'on_trip', 'busy', 'idle'], // Expanded enum values for better status management
-    default: 'offline' 
+    default: 'offline'
+  },
+  approvalStatus: { 
+    type: String, 
+    enum: ['pending', 'approved', 'rejected'], // Updated enum for approval status
+    default: 'pending'  // Default to 'pending' until admin approves or rejects
   },
   rideHistory: [{ type: Schema.Types.ObjectId, ref: 'Trip' }],
   profilePicture: { type: String, default: '' }, // Already added for profile picture
+  licenseFront: { type: String, required: true }, // New field for license front image
+  licenseBack: { type: String, required: true }, // New field for license back image
 }, { timestamps: true });
 
 DriverSchema.index({ currentLocation: '2dsphere' }); // Geospatial index for location-based queries

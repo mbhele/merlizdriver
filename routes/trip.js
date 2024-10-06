@@ -4,25 +4,9 @@ const express = require('express');
 const Trip = require('../models/Trip');
 const Driver = require('../models/Driver');
 // const { sendPushNotification } = require('../utils/notifications'); // Use notification utility for push notifications
-const nodemailer = require('nodemailer');
 const { ensureAuthenticated, ensureRole } = require('../middleware/auth');
 const router = express.Router();
 const geolib = require('geolib'); // You can use the 'geolib' package to calculate distance between coordinates
-
-
-// Nodemailer Transporter Setup
-
-// Nodemailer Transporter Setup
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASSWORD, // Use your actual app password for Gmail
-  },
-});
 
 // Utility function to notify driver and wait for response
 async function notifyDriverAndWait(driver, trip, timeout, req, notifiedDrivers) {
@@ -109,22 +93,6 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
 
     await trip.save();
 
-    // Send email notification after booking the trip
-    const mailOptions = {
-      from: '1mbusombhele@gmail.com',
-      to: 'mbusiseni.mbhele@gmail.com',
-      subject: 'New Trip Booking Notification',
-      text: `A new trip has been booked.\n\nTrip Details:\n- Rider: ${rider}\n- Origin: ${origin}\n- Destination: ${destination}\n- Fare: ${fare}`,
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error('Error sending email:', error);
-      } else {
-        console.log('Email sent:', info.response);
-      }
-    });
-
     let maxAttempts = 6;
     const notifiedDrivers = new Set(); // Track notified drivers
     const io = req.app.get('socketio');
@@ -206,30 +174,11 @@ router.post('/approve/:tripId', ensureAuthenticated, ensureRole(['driver', 'admi
     trip.approved = true;
     await trip.save();
 
-    const mailOptions = {
-      from: '1mbusombhele@gmail.com',
-      to: 'mbusisenimbhele@gmail.com',
-      subject: 'Trip Approved Notification',
-      text: `A trip has been approved by a driver.\n\nTrip ID: ${trip._id}\nDriver: ${driver.name}\nPlate Number: ${plateNumber}`,
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        return res.status(500).json({ message: 'Failed to send email notification.' });
-      } else {
-        console.log('Email sent:', info.response);
-      }
-    });
-
     res.status(200).json({ message: 'Trip approved', trip });
   } catch (error) {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
-
-
-
 
 // Route for rejecting a trip
 router.post('/reject/:tripId', ensureAuthenticated, ensureRole(['driver', 'admin']), async (req, res) => {
@@ -251,25 +200,11 @@ router.post('/reject/:tripId', ensureAuthenticated, ensureRole(['driver', 'admin
     trip.rejectionReason = reason || 'No reason provided';
     await trip.save();
 
-    const mailOptions = {
-      from: '1mbusombhele@gmail.com',
-      to: 'mbusisenimbhele@gmail.com',
-      subject: 'Trip Rejected Notification',
-      text: `A trip has been rejected by a driver.\n\nTrip ID: ${trip._id}\nDriver: ${driver.name}\nRejection Reason: ${trip.rejectionReason}`,
-    };
-
-    try {
-      const info = await transporter.sendMail(mailOptions);
-      res.status(200).json({ message: 'Trip rejected and email sent', trip });
-    } catch (error) {
-      res.status(500).json({ message: 'Failed to send rejection email notification.', error: error.message });
-    }
+    res.status(200).json({ message: 'Trip rejected', trip });
   } catch (error) {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
-
 
 // Cancel a Trip Route
 router.post('/cancel/:tripId', ensureAuthenticated, ensureRole(['rider', 'driver', 'admin']), async (req, res) => {
@@ -327,6 +262,8 @@ router.post('/cancel/:tripId', ensureAuthenticated, ensureRole(['rider', 'driver
     res.status(500).json({ message: `Failed to cancel trip: ${error.message}` }); // Ensure error message is sent
   }
 });
+
+module.exports = router;
 
 
 

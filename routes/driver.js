@@ -11,60 +11,49 @@ const Trip = require('../models/Trip');
 const { ensureAuthenticated, ensureRole } = require('../middleware/auth');
 
 const router = express.Router();
+const upload = multer();
 
 // Cloudinary configuration
 cloudinary.config({
-  cloud_name: 'duouwjyrc',
-  api_key: '853964368612794',
-  api_secret: 'Yzx28aI9mTtYJd0BgP14GlPgmw4'
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-const upload = multer();
 
+// Helper function to generate JWT token
 const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, username: user.username, email: user.email, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: '7d' } // Adjust as needed for your application logic
+    { expiresIn: '7d' }
   );
 };
 
-
-router.post('/refresh-token', ensureAuthenticated, (req, res) => {
-  try {
-    const { id, username, email, role } = req.user; // use the decoded token data
-    const newToken = generateToken({ id, username, email, role });
-    res.status(200).json({ token: newToken });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to refresh token', error: error.message });
-  }
-});
-
-const calculateDistance = (coord1, coord2) => {
-  const toRad = (value) => (value * Math.PI) / 180;
-  const lat1 = coord1[0];
-  const lon1 = coord1[1];
-  const lat2 = coord2[0];
-  const lon2 = coord2[1];
-  const R = 6371; // km
-  const dLat = toRad(lat2 - lat1);
-  const dLon = toRad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const d = R * c;
-  return d; // Distance in km
+// Function to upload an image to Cloudinary
+const uploadToCloudinary = (fileBuffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { resource_type: 'image' },
+      (error, result) => {
+        if (error) {
+          console.error('Cloudinary upload error:', error);
+          reject(new Error('Failed to upload image to Cloudinary.'));
+        } else {
+          resolve(result.secure_url);
+        }
+      }
+    );
+    streamifier.createReadStream(fileBuffer).pipe(stream);
+  });
 };
 
-// Driver Registration with Image Uploads
-router.post('/register', upload.fields([{ name: 'licenseFront', maxCount: 1 }, { name: 'licenseBack', maxCount: 1 }]), async (req, res) => {
+// Driver Registration Route
+router.post('/register', async (req, res) => {
   try {
-    const { username, email, password, phone, vehicle } = req.body;
-    const files = req.files;
+    const { username, email, password, phone, vehicleMake, vehicleModel, plateNumber, idNumber, homeAddress } = req.body;
 
-    if (!username || !email || !password || !phone || !vehicle || !files.licenseFront || !files.licenseBack) {
-      return res.status(400).json({ error: 'All fields, including license images, are required' });
+    if (!username || !email || !password || !phone || !vehicleMake || !vehicleModel || !plateNumber || !idNumber || !homeAddress) {
+      return res.status(400).json({ error: 'All fields are required' });
     }
 
     const existingUser = await User.findOne({ email });
@@ -78,46 +67,31 @@ router.post('/register', upload.fields([{ name: 'licenseFront', maxCount: 1 }, {
       username,
       email,
       password: hashedPassword,
-      role: 'driver'
+      role: 'driver',
     });
+
     await newUser.save();
-
-    // Upload images to Cloudinary
-    const uploadImage = (fileBuffer) => {
-      return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          { resource_type: 'image' },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result.secure_url);
-          }
-        );
-        streamifier.createReadStream(fileBuffer).pipe(stream);
-      });
-    };
-
-    const licenseFrontUrl = await uploadImage(files.licenseFront[0].buffer);
-    const licenseBackUrl = await uploadImage(files.licenseBack[0].buffer);
 
     const newDriver = new Driver({
       userId: newUser._id,
       name: username,
       email,
       phone,
-      vehicle,
-      availability: true,
-      driverStatus: 'offline',
-      currentLocation: {
-        type: 'Point',
-        coordinates: [0, 0] // Initial default coordinates
+      vehicle: {
+        make: vehicleMake,
+        model: vehicleModel,
+        plateNumber: plateNumber,
       },
-      licenseFront: licenseFrontUrl,
-      licenseBack: licenseBackUrl
+      availability: true,
+      currentLocation: { type: 'Point', coordinates: [0, 0] },  // Set type and coordinates
+      idNumber,
+      homeAddress,
     });
 
     await newDriver.save();
 
     const token = generateToken(newUser);
+
     res.status(201).json({ message: 'Driver registered successfully', token, driver: newDriver });
   } catch (error) {
     console.error('Error in registration route:', error);
@@ -125,7 +99,7 @@ router.post('/register', upload.fields([{ name: 'licenseFront', maxCount: 1 }, {
   }
 });
 
-// Driver Login
+// Driver Login Route
 router.post('/login', (req, res, next) => {
   passport.authenticate('local', { usernameField: 'username' }, async (err, user, info) => {
     if (err) return next(err);
@@ -140,9 +114,11 @@ router.post('/login', (req, res, next) => {
           return res.status(404).json({ message: 'Driver not found' });
         }
 
-        const token = generateToken(user);
-        console.log('Generated token for driver:', token);
+        // Update lastActive field
+        driver.lastActive = new Date();
+        await driver.save();
 
+        const token = generateToken(user);
         res.status(200).json({ token, driver });
       });
     } else {
@@ -151,23 +127,77 @@ router.post('/login', (req, res, next) => {
   })(req, res, next);
 });
 
-// Fetch Driver Data
-router.get('/me', ensureAuthenticated, ensureRole(['driver']), async (req, res) => {
+// Endpoint to store the driver's push token
+router.post('/register-push-token', async (req, res) => {
+  const { driverId, token } = req.body;
+
   try {
-    const driver = await Driver.findOne({ userId: req.user.id }).populate('userId', 'username email');
+    const driver = await Driver.findById(driverId);
     if (!driver) {
-      return res.status(404).json({ message: 'Driver not found' });
+      return res.status(404).json({ error: 'Driver not found' });
     }
-    res.status(200).json(driver);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+
+    driver.pushToken = token;
+    await driver.save();
+
+    res.status(200).json({ message: 'Push token registered successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error, unable to save push token' });
   }
 });
 
-// Update Driver Profile
-router.put('/me', ensureAuthenticated, ensureRole(['driver']), async (req, res) => {
+// Route to check if a driver has a push token
+router.get('/check-push-token/:driverId', async (req, res) => {
   try {
-    const { name, email, phone, vehicle, profilePicture } = req.body;
+    const { driverId } = req.params;
+    const driver = await Driver.findById(driverId);
+
+    if (!driver) {
+      return res.status(404).json({ message: 'Driver not found' });
+    }
+
+    if (driver.pushToken) {
+      return res.status(200).json({ message: 'Token found', pushToken: driver.pushToken });
+    } else {
+      return res.status(404).json({ message: 'No token found for this driver' });
+    }
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+// Fetch Driver's Own Profile
+router.get('/me', ensureAuthenticated, ensureRole(['driver']), async (req, res) => {
+  try {
+    console.log('Received GET request to /driver/me'); // Log request receipt
+
+    const driver = await Driver.findOne({ userId: req.user.id }).populate('userId', 'username email');
+    
+    if (!driver) {
+      console.log('Driver not found for user ID:', req.user.id); // Log missing driver
+      return res.status(404).json({ message: 'Driver not found' });
+    }
+
+    console.log('Fetched driver data:', driver); // Log fetched driver data
+    res.status(200).json(driver);
+  } catch (error) {
+    console.error('Error fetching driver data:', error); // Log any errors
+    res.status(500).json({ message: 'Failed to fetch driver data', error: error.message });
+  }
+});
+
+
+// Combined Route for Updating Driver Profile and Uploading License Images
+router.put('/me', ensureAuthenticated, ensureRole(['driver']), upload.fields([
+  { name: 'profileImage', maxCount: 1 },
+  { name: 'licenseFront', maxCount: 1 },
+  { name: 'licenseBack', maxCount: 1 }
+]), async (req, res) => {
+  try {
+    console.log('Received PUT request to /driver/me'); // Log request
+    console.log('Request body:', req.body); // Log body data
+    console.log('Request files:', req.files); // Log files data
+
+    const { name, email, phone, vehicle, homeAddress, idNumber } = req.body;
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -179,108 +209,48 @@ router.put('/me', ensureAuthenticated, ensureRole(['driver']), async (req, res) 
       return res.status(404).json({ message: 'Driver not found' });
     }
 
+    // Handle profile image upload
+    let profilePictureUrl = driver.profilePicture; // Default to existing profile picture
+    if (req.files.profileImage && req.files.profileImage.length > 0) {
+      profilePictureUrl = await uploadToCloudinary(req.files.profileImage[0].buffer);
+    }
+
+    // Handle license images upload
+    let licenseFrontUrl = driver.licenseFront; // Default to existing license front
+    if (req.files.licenseFront && req.files.licenseFront.length > 0) {
+      licenseFrontUrl = await uploadToCloudinary(req.files.licenseFront[0].buffer);
+    }
+
+    let licenseBackUrl = driver.licenseBack; // Default to existing license back
+    if (req.files.licenseBack && req.files.licenseBack.length > 0) {
+      licenseBackUrl = await uploadToCloudinary(req.files.licenseBack[0].buffer);
+    }
+
+    // Update user and driver details
     user.username = name || user.username;
     user.email = email || user.email;
     driver.name = name || driver.name;
     driver.email = email || driver.email;
     driver.phone = phone || driver.phone;
     driver.vehicle = vehicle || driver.vehicle;
-    if (profilePicture) {
-      driver.profilePicture = profilePicture;
-    }
+    driver.profilePicture = profilePictureUrl;
+    driver.licenseFront = licenseFrontUrl;
+    driver.licenseBack = licenseBackUrl;
+    driver.homeAddress = homeAddress || driver.homeAddress;
+    driver.idNumber = idNumber || driver.idNumber;
+    driver.lastActive = new Date();
 
     await user.save();
     await driver.save();
 
-    const token = generateToken(user);
-
-    res.status(200).json({ message: 'Profile updated successfully', token, driver });
+    res.status(200).json({ message: 'Profile updated successfully', driver });
   } catch (error) {
+    console.error('Error updating profile:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-
-// Update Driver Location
-// Update Driver Location
-router.put('/location/:id', ensureAuthenticated, ensureRole(['driver']), async (req, res) => {
-  try {
-    const { coordinates } = req.body;
-    if (!coordinates || coordinates.length !== 2 || coordinates.includes(null)) {
-      return res.status(400).json({ error: 'Invalid coordinates provided' });
-    }
-
-    const driver = await Driver.findByIdAndUpdate(req.params.id, {
-      currentLocation: { type: 'Point', coordinates }
-    }, { new: true });
-
-    if (!driver) {
-      return res.status(404).json({ message: 'Driver not found' });
-    }
-
-    res.status(200).json(driver);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
-// Driver Profile Picture Upload
-// Driver Profile Picture Upload
-// Driver Profile Picture Upload
-// Driver Profile Picture Upload
-router.post('/upload-profile-picture', ensureAuthenticated, ensureRole(['driver']), upload.single('profilePicture'), async (req, res) => {
-  try {
-    const file = req.file;
-    if (!file) {
-      console.error('No file uploaded');
-      return res.status(400).json({ message: 'No file uploaded' });
-    }
-
-    // Upload to Cloudinary
-    const stream = cloudinary.uploader.upload_stream(
-      { resource_type: 'image' },
-      async (error, result) => {
-        if (error) {
-          console.error('Cloudinary upload error:', error);
-          return res.status(500).json({ error: 'Failed to upload image' });
-        }
-
-        console.log('Cloudinary upload success, result:', result); // Debugging log for Cloudinary result
-
-        const imageUrl = result.secure_url;  // Get the secure URL from Cloudinary response
-        console.log('Cloudinary URL:', imageUrl);  // Log the Cloudinary URL
-
-        // Find the driver by user ID and update their profile picture with Cloudinary URL
-        const driver = await Driver.findOneAndUpdate(
-          { userId: req.user._id },  // Find driver by user ID
-          { profilePicture: imageUrl },  // Update profilePicture field with Cloudinary URL
-          { new: true }  // Return the updated document
-        );
-
-        if (!driver) {
-          console.error('Driver not found for user ID:', req.user._id);
-          return res.status(404).json({ message: 'Driver not found' });
-        }
-
-        console.log('Driver profile updated with new image URL:', driver.profilePicture);  // Debugging log
-
-        res.status(200).json({ profilePicture: imageUrl });  // Return the Cloudinary URL
-      }
-    );
-
-    streamifier.createReadStream(file.buffer).pipe(stream);  // Stream the image to Cloudinary
-  } catch (error) {
-    console.error('Error in upload-profile-picture route:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-
-
-
-
-
+// Fetch All Drivers
 // Fetch All Drivers
 router.get('/', async (req, res) => {
   try {
@@ -289,7 +259,7 @@ router.get('/', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
-});
+})
 
 // Fetch Available Drivers
 router.get('/available', async (req, res) => {
@@ -422,44 +392,27 @@ router.get('/dashboard', ensureAuthenticated, ensureRole(['driver']), async (req
   }
 });
 
-// Start a Trip
-router.post('/start/:tripId', ensureAuthenticated, ensureRole(['driver']), async (req, res) => {
-  try {
-    const trip = await Trip.findById(req.params.tripId);
-    if (!trip) {
-      return res.status(404).json({ message: 'Trip not found' });
-    }
-    trip.status = 'in_progress';
-    await trip.save();
+// // Start a Trip
+// router.post('/start/:tripId', ensureAuthenticated, ensureRole(['driver']), async (req, res) => {
+//   try {
+//     const trip = await Trip.findById(req.params.tripId);
+//     if (!trip) {
+//       return res.status(404).json({ message: 'Trip not found' });
+//     }
+//     trip.status = 'in_progress';
+//     await trip.save();
 
-    const io = req.app.get('socketio');
-    io.to(trip._id.toString()).emit('tripStarted', trip);
+//     const io = req.app.get('socketio');
+//     io.to(trip._id.toString()).emit('tripStarted', trip);
 
-    res.status(200).json({ message: 'Trip started', trip });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Calculate and Fetch Distance between Driver and Destination
-router.get('/distance/:driverId/:tripId', async (req, res) => {
-  try {
-    const { driverId, tripId } = req.params;
-    const driver = await Driver.findById(driverId);
-    const trip = await Trip.findById(tripId);
-
-    if (!driver || !trip) {
-      return res.status(404).json({ message: 'Driver or Trip not found' });
-    }
-
-    const distance = calculateDistance(driver.currentLocation.coordinates, [trip.origin.latitude, trip.origin.longitude]);
-    res.status(200).json({ distance });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+//     res.status(200).json({ message: 'Trip started', trip });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
 
 // Start a Trip
+// Start a Trip Route
 router.post('/start/:tripId', ensureAuthenticated, ensureRole(['driver']), async (req, res) => {
   try {
     const trip = await Trip.findById(req.params.tripId);
@@ -481,6 +434,25 @@ router.post('/start/:tripId', ensureAuthenticated, ensureRole(['driver']), async
     res.status(500).json({ error: error.message });
   }
 });
+// Calculate and Fetch Distance between Driver and Destination
+router.get('/distance/:driverId/:tripId', async (req, res) => {
+  try {
+    const { driverId, tripId } = req.params;
+    const driver = await Driver.findById(driverId);
+    const trip = await Trip.findById(tripId);
+
+    if (!driver || !trip) {
+      return res.status(404).json({ message: 'Driver or Trip not found' });
+    }
+
+    const distance = calculateDistance(driver.currentLocation.coordinates, [trip.origin.latitude, trip.origin.longitude]);
+    res.status(200).json({ distance });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 
 
 module.exports = router;

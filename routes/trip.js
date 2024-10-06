@@ -1,15 +1,16 @@
-
 require('dotenv').config(); // Load environment variables if not already done
 
 const express = require('express');
-const mongoose = require('mongoose');
 const Trip = require('../models/Trip');
 const Driver = require('../models/Driver');
-const Pusher = require('pusher');
-const nodemailer = require('nodemailer'); // Import nodemailer
+// const { sendPushNotification } = require('../utils/notifications'); // Use notification utility for push notifications
+const nodemailer = require('nodemailer');
+const { ensureAuthenticated, ensureRole } = require('../middleware/auth');
+const router = express.Router();
+const geolib = require('geolib'); // You can use the 'geolib' package to calculate distance between coordinates
 
 
-
+// Nodemailer Transporter Setup
 
 // Nodemailer Transporter Setup
 const transporter = nodemailer.createTransport({
@@ -18,91 +19,84 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false,
   auth: {
-    user: '1mbusombhele@gmail.com', // Replace with your Gmail email
-    pass: 'rxyb eclg vpdy bghh', // Replace with your App Password
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASSWORD, // Use your actual app password for Gmail
   },
 });
 
-const User = require('../models/User');
-const { ensureAuthenticated, ensureRole } = require('../middleware/auth');
-const router = express.Router();
-// Pusher configuration
-// Configure Pusher
-// Pusher configuration
-const pusher = new Pusher({
-  appId: process.env.PUSHER_APP_ID,
-  key: process.env.PUSHER_KEY,
-  secret: process.env.PUSHER_SECRET,
-  cluster: process.env.PUSHER_CLUSTER,
-  useTLS: true,
-});
-
+// Utility function to notify driver and wait for response
 async function notifyDriverAndWait(driver, trip, timeout, req, notifiedDrivers) {
   const io = req.app.get('socketio');
   const tripId = trip._id.toString();
-  const driverRoom = driver._id.toString();
 
-  // Check if the driver has already been notified for this trip
+  // Check if driver has already been notified for this trip
   if (notifiedDrivers.has(driver._id.toString())) {
-    console.log(`Driver ${driver._id} has already been notified for trip ${tripId}. Skipping...`);
-    return Promise.resolve(false); // Skip this driver
+    console.log(`Driver ${driver._id} already notified for trip ${tripId}.`);
+    return Promise.resolve(false); // Skip the driver
   }
 
   return new Promise((resolve) => {
-    let isHandled = false; // Flag to prevent race conditions
-    notifiedDrivers.add(driver._id.toString()); // Mark this driver as notified
+    let isHandled = false; // Prevent race conditions
+    notifiedDrivers.add(driver._id.toString()); // Mark driver as notified
 
-    console.log(`Emitting 'newTrip' event to driver ${driver._id} for trip ${tripId}`);
-    io.to(driverRoom).emit('newTrip', trip);
+    console.log(`Sending 'newTrip' event to driver ${driver._id} for trip ${tripId}`);
+    io.to(driver._id.toString()).emit('newTrip', trip); // Emit to driver's unique room
 
-    // Listener for driver response
     const responseListener = (response) => {
       console.log(`Received driver response for trip ${tripId} from driver ${response.driverId}`);
 
       if (!isHandled && response.tripId === tripId && response.driverId === driver._id.toString()) {
-        console.log(`Driver ${driver._id} approved trip ${tripId}. Cleaning up...`);
-        isHandled = true; // Set flag to prevent further handling
-        io.off('driverResponse', responseListener); // Clean up the listener
+        isHandled = true; // Prevent further handling
+        io.off('driverResponse', responseListener); // Clean up listener
         clearTimeout(timeoutId); // Clear the timeout
-        resolve(response.accepted); // Resolve with the driver's response
+        resolve(response.accepted); // Resolve with driver's response
       }
     };
 
     io.on('driverResponse', responseListener);
 
-    // Fallback after the timeout
+    // Fallback after timeout
     const timeoutId = setTimeout(async () => {
       if (!isHandled) {
         console.log(`Timeout for driver ${driver._id} for trip ${tripId}`);
-        isHandled = true; // Set flag to prevent further handling
-        io.off('driverResponse', responseListener); // Clean up the listener on timeout
-        
-        // Check if the trip has already been accepted
+        isHandled = true; // Prevent further handling
+        io.off('driverResponse', responseListener); // Clean up listener
+
+        // Check if trip has already been accepted
         const latestTrip = await Trip.findById(tripId);
         if (latestTrip && latestTrip.status === 'accepted') {
-          console.log(`Trip ${tripId} already accepted by another driver. No further action needed.`);
+          console.log(`Trip ${tripId} already accepted by another driver.`);
           resolve(false);
         } else {
-          resolve(false); // Resolve with false as the driver did not respond in time
+          resolve(false); // Resolve as false if the driver did not respond
         }
       }
     }, timeout);
   });
 }
 
-// Server-side route handling
-// Server-side route handling
+// Function to check if the driver is at the destination
+const hasArrivedAtDestination = (endLocation, destinationLocation) => {
+  const distance = geolib.getDistance(
+    { latitude: endLocation.latitude, longitude: endLocation.longitude },
+    { latitude: destinationLocation.latitude, longitude: destinationLocation.longitude }
+  );
+  
+  // If distance is less than 100 meters, consider the trip as completed
+  return distance <= 100; // 100 meters
+};
+
+// Route to book a trip and notify the driver
 router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, res) => {
   try {
     const { rider, origin, destination, distance, fare, duration } = req.body;
 
-    // Validation to ensure all required fields are present
+    // Validation to ensure all fields are present
     if (!rider || !origin || !destination || !distance || !fare || !duration) {
-      console.log('Validation error: Missing fields in request body:', req.body);
       return res.status(400).json({ message: 'All fields are required: rider, origin, destination, distance, fare, and duration.' });
     }
 
-    // Create a new trip without coordinates
+    // Create a new trip
     const trip = new Trip({
       rider,
       origin,
@@ -110,22 +104,15 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
       fare,
       distance,
       duration,
-      status: 'requested'
+      status: 'requested',
     });
 
-    try {
-      console.log('Saving trip data:', trip);
-      await trip.save();
-      console.log('Trip saved successfully');
-    } catch (saveError) {
-      console.error('Error saving trip:', saveError.message);
-      return res.status(500).json({ error: 'Failed to save trip data' });
-    }
+    await trip.save();
 
-    // Send an email notification after booking the trip
+    // Send email notification after booking the trip
     const mailOptions = {
-      from: '1mbusombhele@gmail.com', // Your Gmail email
-      to: 'mbusiseni.mbhele@gmail.com', // Multiple recipients separated by a comma
+      from: '1mbusombhele@gmail.com',
+      to: 'mbusiseni.mbhele@gmail.com',
       subject: 'New Trip Booking Notification',
       text: `A new trip has been booked.\n\nTrip Details:\n- Rider: ${rider}\n- Origin: ${origin}\n- Destination: ${destination}\n- Fare: ${fare}`,
     };
@@ -138,39 +125,32 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
       }
     });
 
-    console.log('Searching for available drivers...');
     let maxAttempts = 6;
-    const notifiedDrivers = new Set(); // Keep track of notified drivers
+    const notifiedDrivers = new Set(); // Track notified drivers
     const io = req.app.get('socketio');
 
     while (maxAttempts > 0) {
-      // Fetch drivers who are either online or idle and available
+      // Fetch available drivers
       const drivers = await Driver.find({
-        status: { $in: ['online', 'idle'] },  // Include both 'online' and 'idle' drivers
+        status: { $in: ['online', 'idle'] }, // Include both 'online' and 'idle' drivers
         availability: true,
-        _id: { $nin: Array.from(notifiedDrivers) }  // Filter out drivers who have already been notified
+        _id: { $nin: Array.from(notifiedDrivers) }, // Exclude drivers already notified
       });
 
       if (drivers.length === 0) {
         console.log('No drivers found nearby');
-        break; // Exit loop if no drivers are available
+        break;
       }
 
-      console.log('Drivers found:', drivers.length);
-
-      // Notify only the drivers found in the query
       for (const driver of drivers) {
-        console.log(`Sending trip request to driver ${driver._id} with status ${driver.status}...`);
-
-        // Check if the trip is already accepted by another driver
+        // Check if the trip has already been accepted
         const latestTrip = await Trip.findById(trip._id);
         if (latestTrip.status === 'accepted') {
-          console.log(`Trip ${trip._id} already accepted. Stopping further requests.`);
-          io.to(rider.toString()).emit('tripConfirmed', latestTrip); // Notify the rider about the trip confirmation
+          io.to(rider.toString()).emit('tripConfirmed', latestTrip);
           return res.status(200).json({ message: 'Trip already accepted by another driver.', trip: latestTrip });
         }
 
-        // Ensure that only these drivers are notified
+        // Notify driver and wait for response
         const driverAccepted = await notifyDriverAndWait(driver, trip, 12000, req, notifiedDrivers);
 
         if (driverAccepted) {
@@ -182,53 +162,42 @@ router.post('/book-trip', ensureAuthenticated, ensureRole('rider'), async (req, 
           driver.availability = false;
           await driver.save();
 
-          // Emit socket events to the driver and rider
           io.to(driver._id.toString()).emit('tripConfirmed', trip);
           io.to(rider.toString()).emit('tripConfirmed', trip);
 
-          console.log('Trip confirmed and driver assigned:', driver._id);
           return res.status(200).json({ message: 'Trip confirmed', trip });
-        } else {
-          // Add driver to the notified set to prevent reprocessing
-          notifiedDrivers.add(driver._id.toString());
         }
+
+        notifiedDrivers.add(driver._id.toString()); // Add driver to the notified set
       }
 
       maxAttempts -= 1;
     }
 
-    console.log('No drivers accepted the trip after multiple attempts');
-
-    // Notify rider that no drivers are available
     io.to(rider.toString()).emit('noDriversAvailable', {
       message: 'No drivers accepted the trip after multiple attempts.',
-      tripId: trip._id
+      tripId: trip._id,
     });
 
-    // Return a 200 response with a message instead of 404 or 500
-    return res.status(200).json({ message: 'No drivers accepted the trip after multiple attempts.', trip: trip });
+    return res.status(200).json({ message: 'No drivers accepted the trip after multiple attempts.', trip });
   } catch (error) {
-    console.error('Error booking trip:', error.message); // Log the exact error message
+    console.error('Error booking trip:', error.message);
     return res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-
-
-
+// Route for approving a trip
 router.post('/approve/:tripId', ensureAuthenticated, ensureRole(['driver', 'admin']), async (req, res) => {
   try {
     const { driverId, profilePicture, plateNumber } = req.body;
 
     const driver = await Driver.findById(driverId);
     if (!driver) {
-      console.log('Driver not found');
       return res.status(404).json({ message: 'Driver not found' });
     }
 
     const trip = await Trip.findById(req.params.tripId).populate('rider');
     if (!trip) {
-      console.log('Trip not found');
       return res.status(404).json({ message: 'Trip not found' });
     }
 
@@ -237,20 +206,15 @@ router.post('/approve/:tripId', ensureAuthenticated, ensureRole(['driver', 'admi
     trip.approved = true;
     await trip.save();
 
-    console.log(`Trip approved by driver ${driver.name} (ID: ${driverId}) for trip ID: ${trip._id}`);
-
-    // Send email notification to Mbusiseni
     const mailOptions = {
-      from: '1mbusombhele@gmail.com', // Replace with your Gmail email
-      to: 'mbusisenimbhele@gmail.com,merlizholdings@gmail.com', // Email to send the notification to
+      from: '1mbusombhele@gmail.com',
+      to: 'mbusisenimbhele@gmail.com,merlizholdings@gmail.com',
       subject: 'Trip Approved Notification',
       text: `A trip has been approved by a driver.\n\nTrip ID: ${trip._id}\nDriver: ${driver.name}\nPlate Number: ${plateNumber}`,
     };
 
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
-        console.error('Error sending email:', error);
-        // Optionally, respond with an error message if email fails
         return res.status(500).json({ message: 'Failed to send email notification.' });
       } else {
         console.log('Email sent:', info.response);
@@ -259,61 +223,48 @@ router.post('/approve/:tripId', ensureAuthenticated, ensureRole(['driver', 'admi
 
     res.status(200).json({ message: 'Trip approved', trip });
   } catch (error) {
-    console.error('Error approving trip:', error.message);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
 
+
+
+
+// Route for rejecting a trip
 router.post('/reject/:tripId', ensureAuthenticated, ensureRole(['driver', 'admin']), async (req, res) => {
   try {
-    console.log('Received request to reject trip');
-    console.log(`Request params:`, req.params);  // Log request params
-    console.log(`Request body:`, req.body);      // Log request body
-
     const { driverId, reason } = req.body;
     const tripId = req.params.tripId;
 
-    console.log(`Rejecting trip with ID: ${tripId} by driver ID: ${driverId}`);
-
     const driver = await Driver.findById(driverId);
     if (!driver) {
-      console.log('Driver not found');
       return res.status(404).json({ message: 'Driver not found' });
     }
 
     const trip = await Trip.findById(tripId).populate('rider');
     if (!trip) {
-      console.log('Trip not found');
       return res.status(404).json({ message: 'Trip not found' });
     }
 
-    // Update trip status to rejected
     trip.status = 'rejected';
     trip.rejectionReason = reason || 'No reason provided';
     await trip.save();
 
-    console.log(`Trip rejected by driver ${driver.name} (ID: ${driverId}) for trip ID: ${trip._id}`);
-
-    // Send email notification to Mbusiseni
     const mailOptions = {
       from: '1mbusombhele@gmail.com',
-      to: 'mbusisenimbhele@gmail.com,merlizholdings@gmail.com', // Email to send the notification to
+      to: 'mbusisenimbhele@gmail.com,merlizholdings@gmail.com',
       subject: 'Trip Rejected Notification',
       text: `A trip has been rejected by a driver.\n\nTrip ID: ${trip._id}\nDriver: ${driver.name}\nRejection Reason: ${trip.rejectionReason}`,
     };
 
     try {
       const info = await transporter.sendMail(mailOptions);
-      console.log('Rejection email sent:', info.response);
       res.status(200).json({ message: 'Trip rejected and email sent', trip });
     } catch (error) {
-      console.error('Error sending rejection email:', error.message);
       res.status(500).json({ message: 'Failed to send rejection email notification.', error: error.message });
     }
-
   } catch (error) {
-    console.error('Error rejecting trip:', error.message);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });

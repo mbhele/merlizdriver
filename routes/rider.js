@@ -1,9 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-// const express = require('express');
-// const bcrypt = require('bcryptjs');
-// const jwt = require('jsonwebtoken');
 const Rider = require('../models/Rider');
 const User = require('../models/User');
 const { ensureAuthenticated, ensureRole } = require('../middleware/auth');
@@ -11,12 +8,11 @@ const { ensureAuthenticated, ensureRole } = require('../middleware/auth');
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
-// Function to generate JWT token
+// Function to generate JWT token without expiration
 const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, username: user.username, email: user.email, role: user.role },
-    JWT_SECRET,
-    { expiresIn: '3h' }
+    JWT_SECRET
   );
 };
 
@@ -202,6 +198,63 @@ router.post('/logout', ensureAuthenticated, (req, res) => {
   req.user = null; // Invalidate the user session (JWT token)
   res.status(200).json({ message: 'Logged out successfully' });
 });
+// Get recent searches for a specific rider
+// Get recent searches for a specific rider
+// Get recent searches for a specific rider
+// Get recent searches for a specific rider
+router.get('/:userId/recentSearches', ensureAuthenticated, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log('Fetching recent searches for Rider with User ID:', userId); // Debugging
+
+    // Find the Rider by userId instead of _id
+    const rider = await Rider.findOne({ userId });
+
+    if (!rider) {
+      return res.status(404).json({ message: 'Rider not found' });
+    }
+
+    // Assuming `recentSearches` is part of the rider schema
+    res.status(200).json(rider.recentSearches || []);
+  } catch (error) {
+    console.error('Error fetching recent searches:', error.message);
+    res.status(500).json({ error: 'Failed to fetch recent searches' });
+  }
+});
+
+
+
+
+// Save a recent search for a rider
+// Save a recent search for a rider by userId
+router.post('/:userId/saveSearch', ensureAuthenticated, async (req, res) => {
+  try {
+    const { userId } = req.params; // This is the user's ID (referenced in the Rider schema as userId)
+    const { address, latitude, longitude } = req.body;
+
+    // Find the Rider using the userId field
+    const rider = await Rider.findOne({ userId });
+    if (!rider) {
+      return res.status(404).json({ message: 'Rider not found' });
+    }
+
+    // Add the new search to recent searches
+    rider.recentSearches.push({ address, latitude, longitude });
+
+    // Limit the recent searches to the last 5
+    if (rider.recentSearches.length > 5) {
+      rider.recentSearches.shift();
+    }
+
+    await rider.save();
+
+    res.status(201).json({ message: 'Search saved successfully' });
+  } catch (error) {
+    console.error('Error saving recent search:', error.message);
+    res.status(500).json({ error: 'Failed to save recent search' });
+  }
+});
+
 
 // Get all bookings by a rider
 router.get('/:riderId/bookings', ensureAuthenticated, async (req, res) => {
@@ -273,6 +326,8 @@ router.get('/requests', ensureAuthenticated, ensureRole('rider'), async (req, re
     res.status(500).json({ error: error.message });
   }
 });
+
+
 
 
 

@@ -13,26 +13,30 @@ const DriverSchema = new Schema({
   },
   availability: { type: Boolean, default: true },
   currentLocation: {
-    type: { type: String, enum: ['Point'], required: true },
-    coordinates: { type: [Number], default: [0, 0], required: true } // Set a default location or make it optional initially
+    type: { type: String, enum: ['Point'], default: 'Point', required: true },
+    coordinates: { type: [Number], default: [0, 0], required: true }
   },
-  status: {  // Keeping this unchanged as you requested
+  status: {
     type: String,
-    enum: ['online', 'offline', 'on_trip', 'busy', 'idle'], // Expanded enum values for better status management
+    enum: ['online', 'offline', 'on_trip', 'busy', 'idle'],
     default: 'offline'
   },
   approvalStatus: { 
     type: String, 
-    enum: ['pending', 'approved', 'rejected'], // Updated enum for approval status
-    default: 'pending'  // Default to 'pending' until admin approves or rejects
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
   },
   rideHistory: [{ type: Schema.Types.ObjectId, ref: 'Trip' }],
-  profilePicture: { type: String, default: '' }, // Already added for profile picture
-  licenseFront: { type: String, required: true }, // New field for license front image
-  licenseBack: { type: String, required: true }, // New field for license back image
+  profilePicture: { type: String, default: '' },
+  licenseFront: { type: String },  // Optional
+  licenseBack: { type: String },   // Optional
+  idNumber: { type: String, required: true },
+  homeAddress: { type: String, required: true },
+  lastActive: { type: Date, default: Date.now },
+  pushToken: { type: String }  // Added pushToken field
 }, { timestamps: true });
 
-DriverSchema.index({ currentLocation: '2dsphere' }); // Geospatial index for location-based queries
+DriverSchema.index({ currentLocation: '2dsphere' });
 
 const Driver = mongoose.models.Driver || mongoose.model('Driver', DriverSchema);
 module.exports = Driver;

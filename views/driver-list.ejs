@@ -28,10 +28,6 @@
       box-shadow: 0 0 15px rgba(0, 0, 0, 0.5); /* Gold shadow */
     }
 
-    .table-wrapper {
-      overflow-x: auto; /* Enable horizontal scrolling */
-    }
-
     table {
       width: 100%;
       border-collapse: collapse;
@@ -61,7 +57,7 @@
       border: 2px solid #ffd700; /* Gold border */
     }
 
-    .view-details {
+    .view-details, .delete-driver {
       background-color: #ffd700; /* Gold background */
       color: #000000; /* Black text */
       padding: 5px 10px;
@@ -69,55 +65,12 @@
       text-decoration: none;
       font-size: 0.9rem;
       cursor: pointer;
+      display: inline-block;
+      margin-right: 5px; /* Add margin for spacing */
     }
 
-    .view-details:hover {
+    .view-details:hover, .delete-driver:hover {
       background-color: #ffbf00; /* Slightly darker gold */
-    }
-
-    /* Modal Styles */
-    .modal {
-      display: none; /* Hidden by default */
-      position: fixed; /* Stay in place */
-      z-index: 1; /* Sit on top */
-      left: 0;
-      top: 0;
-      width: 100%; /* Full width */
-      height: 100%; /* Full height */
-      overflow: auto; /* Enable scroll if needed */
-      background-color: rgba(0, 0, 0, 0.8); /* Black w/ opacity */
-    }
-
-    .modal-content {
-      background-color: #111; /* Slightly darker background */
-      margin: 10% auto; /* 10% from the top and centered */
-      padding: 20px;
-      border: 1px solid #ffd700; /* Gold border */
-      width: 60%; /* Adjust width as needed */
-      color: #fff;
-      border-radius: 8px;
-      position: relative;
-    }
-
-    .close-btn {
-      color: #ffd700; /* Gold */
-      float: right;
-      font-size: 1.5rem;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    .close-btn:hover {
-      color: #ffbf00; /* Slightly darker gold */
-    }
-
-    .modal-image {
-      width: 100px;
-      height: 100px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-bottom: 15px;
-      border: 2px solid #ffd700; /* Gold border */
     }
 
     /* Responsive styles */
@@ -130,91 +83,83 @@
         font-size: 0.8rem;
       }
 
-      .view-details {
+      .view-details, .delete-driver {
         padding: 4px 8px;
         font-size: 0.8rem;
       }
     }
   </style>
+  <script>
+    function deleteDriver(driverId) {
+      if (confirm('Are you sure you want to delete this driver?')) {
+        fetch(`/admin/drivers/${driverId}/delete`, {
+          method: 'DELETE',
+        })
+        .then(response => {
+          if (response.ok) {
+            alert('Driver deleted successfully.');
+            window.location.reload(); // Reload the page after successful deletion
+          } else {
+            alert('Failed to delete driver.');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred while deleting the driver.');
+        });
+      }
+    }
+  </script>
 </head>
 <body>
-    <h1>Driver List</h1>
-    <div class="table-container">
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Profile Picture</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Vehicle</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% drivers.forEach(driver => { %>
-              <tr>
-                <td>
-                  <% if (driver.profilePicture && !driver.profilePicture.startsWith('file://')) { %>
-                    <img src="<%= driver.profilePicture %>" alt="Profile Picture" class="profile-picture">
-                  <% } else { %>
-                    <img src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?w=740" alt="Default Profile" class="profile-picture">
-                  <% } %>
-                </td>
-                <td><%= driver.name %></td>
-                <td><%= driver.email %></td>
-                <td><%= driver.phone %></td>
-                <td><%= driver.vehicle.make %> <%= driver.vehicle.model %> - <%= driver.vehicle.plateNumber %></td>
-                <td><%= driver.status %></td>
-                <td>
-                  <button class="view-details" onclick="showDriverDetails('<%= driver._id %>', '<%= driver.name %>', '<%= driver.email %>', '<%= driver.phone %>', '<%= driver.vehicle.make %> <%= driver.vehicle.model %> - <%= driver.vehicle.plateNumber %>', '<%= driver.status %>', '<%= driver.profilePicture.startsWith('file://') ? '' : driver.profilePicture %>', [<%= driver.currentLocation.coordinates.join(', ') %>])">View Details</button>
-                </td>
-              </tr>
-            <% }); %>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  
-    <!-- Modal for Driver Details -->
-    <div id="driverModal" class="modal">
-      <div class="modal-content">
-        <span class="close-btn" onclick="closeModal()">&times;</span>
-        <img id="modal-driver-image" src="" alt="Driver Image" class="modal-image">
-        <h2 id="modal-driver-name"></h2>
-        <p><strong>Email:</strong> <span id="modal-driver-email"></span></p>
-        <p><strong>Phone:</strong> <span id="modal-driver-phone"></span></p>
-        <p><strong>Vehicle:</strong> <span id="modal-driver-vehicle"></span></p>
-        <p><strong>Status:</strong> <span id="modal-driver-status"></span></p>
-        <p><strong>Current Location:</strong> <span id="modal-driver-location"></span></p>
-      </div>
-    </div>
-  
-    <script>
-      // Function to show modal with driver details
-      function showDriverDetails(driverId, name, email, phone, vehicle, status, imageUrl, location) {
-        // Check if the image URL is valid or not a 'file://' URL
-        const validImageUrl = imageUrl && !imageUrl.startsWith('file://') ? imageUrl : 'https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?w=740';
-  
-        // Fill modal with driver data
-        document.getElementById('modal-driver-name').textContent = name;
-        document.getElementById('modal-driver-email').textContent = email;
-        document.getElementById('modal-driver-phone').textContent = phone;
-        document.getElementById('modal-driver-vehicle').textContent = vehicle;
-        document.getElementById('modal-driver-status').textContent = status;
-        document.getElementById('modal-driver-image').src = validImageUrl; // Show default if no valid image
-        document.getElementById('modal-driver-location').textContent = `[${location}]`;
-  
-        // Show the modal
-        document.getElementById('driverModal').style.display = 'block';
-      }
-  
-      // Function to close the modal
-      function closeModal() {
-        document.getElementById('driverModal').style.display = 'none';
-      }
-    </script>
-  </body>
+  <h1>Driver List</h1>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Profile Picture</th>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Vehicle</th>
+          <th>Status</th>
+          <th>Rating</th>
+          <th>Approval Status</th>
+          <th>Last Active</th>
+          <th>Total Rides</th>
+          <th>View Details</th>
+          <th>Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% drivers.forEach(driver => { %>
+          <tr>
+            <td>
+              <% if (driver.profilePicture && !driver.profilePicture.startsWith('file://') && driver.profilePicture.trim() !== '') { %>
+                <img src="<%= encodeURI(driver.profilePicture) %>" alt="Profile Picture" class="profile-picture">
+              <% } else { %>
+                <img src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?w=740" alt="Default Profile" class="profile-picture">
+              <% } %>
+            </td>
+            <td><%= driver.name %></td>
+            <td><%= driver.email %></td>
+            <td><%= driver.phone %></td>
+            <td><%= driver.vehicle.make %> <%= driver.vehicle.model %> - <%= driver.vehicle.plateNumber %></td>
+            <td><%= driver.status %></td>
+            <td><%= driver.rating %> / 5</td> <!-- Placeholder for driver rating -->
+            <td><%= driver.approvalStatus %></td> <!-- Display approval status -->
+            <td><%= driver.lastActive ? new Date(driver.lastActive).toLocaleString() : 'N/A' %></td> <!-- Display last active date -->
+            <td><%= driver.rideHistory ? driver.rideHistory.length : 0 %></td> <!-- Display total rides -->
+            <td>
+              <a href="/admin/drivers/<%= driver._id %>" class="view-details">View Details</a>
+            </td>
+            <td>
+              <button class="delete-driver" onclick="deleteDriver('<%= driver._id %>')">Delete</button>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</body>
 </html>

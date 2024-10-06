@@ -1,5 +1,4 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
 const passport = require('passport');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -9,6 +8,7 @@ const Rider = require('../models/Rider');
 const PasswordResetToken = require('../models/PasswordResetToken');
 const router = express.Router();
 const { ensureAuthenticated } = require('../middleware/auth');
+const { hashPassword } = require('../utils/passwordUtils'); // Use the hashPassword utility
 
 // Nodemailer transporter setup
 const transporter = nodemailer.createTransport({
@@ -29,7 +29,7 @@ const generateToken = (user) => {
   return jwt.sign(
     { id: user._id, username: user.username, email: user.email, role: user.role },
     process.env.JWT_SECRET,
-    { expiresIn: '1h' }
+    { expiresIn: '7d' } // Token expires in 7 days
   );
 };
 
@@ -45,7 +45,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await hashPassword(password);
 
     // Create a new user
     const newUser = new User({
@@ -90,13 +90,12 @@ router.post('/register', async (req, res) => {
         paymentMethods: newUser.paymentMethods,
         createdAt: newUser.createdAt,
       },
-      redirect: 'https://merlizholdings.co.za/admin/dashboard' // Added redirect URL
+      redirect: 'https://merlizholdings.co.za/admin/dashboard',
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 // Login route
 router.post('/login', (req, res, next) => {
@@ -118,14 +117,13 @@ router.post('/login', (req, res, next) => {
       phone: user.phone,
     };
 
-    // Log to verify that profilePicture is included
     console.log('Login user with profilePicture:', userWithProfilePicture);
 
     res.json({ token, user: userWithProfilePicture });
   })(req, res, next);
 });
 
-
+// Update user profile route
 router.put('/:id', ensureAuthenticated, async (req, res) => {
   try {
     const { username, email, phone, profilePicture } = req.body;
@@ -160,8 +158,8 @@ router.put('/:id', ensureAuthenticated, async (req, res) => {
 
     console.log('Updated Rider:', updatedRider);
 
-    res.status(200).json({ 
-      message: 'Profile updated successfully', 
+    res.status(200).json({
+      message: 'Profile updated successfully',
       user: {
         ...updatedUser.toObject(),
         riderId: updatedRider._id,
@@ -174,14 +172,11 @@ router.put('/:id', ensureAuthenticated, async (req, res) => {
 });
 
 // Google OAuth routes
-router.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
-);
+router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get('/auth/google/callback',
   passport.authenticate('google', { failureRedirect: '/login' }),
   (req, res) => {
-    // Successful authentication, redirect to the appropriate dashboard
     console.log('Google authenticated user:', req.user);
     const userRole = req.user.role || 'customer';
     let redirectUrl = '/';
@@ -268,7 +263,7 @@ router.post('/reset-password/:token', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    user.password = await bcrypt.hash(password, 10);
+    user.password = await hashPassword(password); // Using the hashPassword utility
     await user.save();
 
     await PasswordResetToken.deleteOne({ token });

@@ -7,6 +7,14 @@ const TripSchema = new Schema({
   driverDetails: { type: Schema.Types.ObjectId, ref: 'Driver' }, // Additional reference for detailed driver info
   origin: { type: String, required: true }, // Store as a string address
   destination: { type: String, required: true }, // Store as a string address
+  locationUpdates: [
+    {
+      latitude: { type: Number },
+      longitude: { type: Number },
+      timestamp: { type: Date, default: Date.now },
+    }
+  ]
+,
   status: {
     type: String,
     enum: ['requested', 'pending', 'accepted', 'in_progress', 'completed', 'cancelled', 'frozen', 'approved', 'rejected'], // Add 'rejected' here

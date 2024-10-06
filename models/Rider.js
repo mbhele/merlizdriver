@@ -9,10 +9,17 @@ const RiderSchema = new Schema({
   paymentMethods: [
     {
       type: { type: String, required: true, default: 'cash' },
-      details: { type: Map, of: String, default: {} }
-    }
+      details: { type: Map, of: String, default: {} },
+    },
   ],
-  rideHistory: [{ type: Schema.Types.ObjectId, ref: 'Trip' }]
+  rideHistory: [{ type: Schema.Types.ObjectId, ref: 'Trip' }],
+  recentSearches: [
+    {
+      address: { type: String },
+      latitude: { type: Number },
+      longitude: { type: Number },
+    },
+  ],
 }, { timestamps: true });
 
 module.exports = mongoose.model('Rider', RiderSchema);

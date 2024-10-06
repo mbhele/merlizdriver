@@ -36,13 +36,8 @@ const app = express();
 const server = http.createServer(app);
 
 // Initialize Socket.IO with the server
-const io = socketio(server, {
-  cors: {
-    origin: process.env.CORS_ORIGIN || 'https://merlizholdings.co.za',
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
-});
+
+const io = socketio(server);
 
 // Set Socket.IO instance to be accessible throughout the app
 app.set('socketio', io);
@@ -96,22 +91,21 @@ io.on('connection', (socket) => {
       console.error('Error saving location update:', error);
     }
   });
+// Handle driver's acceptance of the trip
+socket.on('driverResponse', (data) => {
+  const { driverId, tripId, accepted } = data;
 
-  // Handle driver's acceptance of the trip
-  socket.on('driverResponse', (data) => {
-    const { driverId, tripId, accepted } = data;
+  if (accepted) {
+    console.log(`Driver ${driverId} accepted trip ${tripId}`);
 
-    if (accepted) {
-      console.log(`Driver ${driverId} accepted trip ${tripId}`);
-
-      // Emit the tripApproved message to the rider's room
-      io.to(tripId).emit('message', {
-        type: 'tripApproved',
-        text: 'Your trip has been accepted by the driver.',
-        driverId,
-      });
-    }
-  });
+    // Emit the tripApproved message to the rider's room
+    io.to(tripId).emit('message', {
+      type: 'tripApproved',
+      text: 'Your trip has been accepted by the driver.',
+      driverId,
+    });
+  }
+});
 
   // Handle trip cancellation by the driver
   socket.on('tripCancelledByDriver', (data) => {
@@ -146,21 +140,20 @@ io.on('connection', (socket) => {
     // Acknowledge receipt of cancellation event
     if (callback) callback({ status: 'received' });
   });
+// Handle driver's arrival at the destination
+socket.on('driverArrivedAtDestination', (data) => {
+  const { tripId, driverId, time } = data;
 
-  // Handle driver's arrival at the destination
-  socket.on('driverArrivedAtDestination', (data) => {
-    const { tripId, driverId, time } = data;
+  console.log(`Driver ${driverId} has arrived at the destination for trip ${tripId}. Time: ${time}`);
 
-    console.log(`Driver ${driverId} has arrived at the destination for trip ${tripId}. Time: ${time}`);
-
-    // Emit the arrival event to the rider in the trip room
-    io.to(tripId).emit('message', {
-      type: 'arrivedAtDestination',
-      text: 'The driver has arrived at your destination.',
-      driverId,
-      time,
-    });
+  // Emit the arrival event to the rider in the trip room
+  io.to(tripId).emit('message', {
+    type: 'arrivedAtDestination',
+    text: 'The driver has arrived at your destination.',
+    driverId,
+    time,
   });
+});
 
   // Handle disconnection
   socket.on('disconnect', () => {
@@ -168,13 +161,17 @@ io.on('connection', (socket) => {
   });
 });
 
+
+
+
+
 // Middleware setup
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'https://merlizholdings.co.za',
+  origin: process.env.CORS_ORIGIN || 'https://merlizholdings.co.za', // Update this with your front-end URL
   credentials: true,
 }));
 
@@ -233,6 +230,69 @@ app.post('/api/send-message', (req, res) => {
   res.status(200).json({ message: 'Message sent successfully.' });
 });
 
+// Endpoint to send a message from driver to rider
+app.post('/api/send-driver-message', (req, res) => {
+  const { message, riderRoom } = req.body;
+
+  if (!message || !riderRoom) {
+    return res.status(400).json({ error: 'Message and riderRoom are required.' });
+  }
+
+  const io = app.get('socketio');
+  console.log(`Sending message to riderRoom: ${riderRoom}`);
+  io.to(riderRoom).emit('message', { text: message });
+  res.status(200).json({ message: 'Message sent to rider successfully.' });
+});
+
+// Endpoint to send a message from rider to driver
+app.post('/api/send-rider-message', (req, res) => {
+  const { message, driverRoom } = req.body;
+
+  if (!message || !driverRoom) {
+    return res.status(400).json({ error: 'Message and driverRoom are required.' });
+  }
+
+  const io = app.get('socketio');
+  console.log(`Sending message to driverRoom: ${driverRoom}`);
+  io.to(driverRoom).emit('message', { text: message });
+  res.status(200).json({ message: 'Message sent to driver successfully.' });
+});
+
+// Endpoint to notify a rider with a custom message
+app.post('/api/notify-rider', (req, res) => {
+  const { message, riderRoom } = req.body;
+
+  if (!message || !riderRoom) {
+    return res.status(400).json({ error: 'Message and riderRoom are required.' });
+  }
+
+  // Emit the message to the rider's room using Socket.IO
+  const io = app.get('socketio');
+  console.log(`Notifying riderRoom: ${riderRoom}`);
+  io.to(riderRoom).emit('message', { text: message });
+
+  res.status(200).json({ message: 'Message sent to rider successfully.' });
+});
+// Endpoint to test sending a message to the rider
+app.post('/api/test-send-message', (req, res) => {
+  const { tripId, message } = req.body;
+
+  if (!tripId || !message) {
+    return res.status(400).json({ error: 'Trip ID and message are required.' });
+  }
+
+  const io = app.get('socketio');
+  console.log(`Testing: Sending message to room: ${tripId}`);
+  
+  // Emit the message to the specified trip room using Socket.IO
+  io.to(tripId).emit('message', {
+    type: 'testMessage',
+    text: message,
+  });
+
+  res.status(200).json({ message: 'Test message sent successfully.' });
+});
+
 // Mount routes
 app.use('/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
@@ -241,14 +301,15 @@ app.use('/customer', customerRoutes);
 app.use('/api/password-reset', passwordResetRoutes);
 app.use('/foodFolder', foodFolderRoutes);
 app.use('/api/rider', riderRoutes);
-app.use('/api/trip', tripRoutes);
+app.use('/api/trip', tripRoutes); // Trip routes, including notifications
+
 app.use('/socket', locationRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/products', productRoutes);
 app.use('/api/products', apiProductRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/driver', driverRoutes);
-app.use('/', driverRoutes);
+app.use('/', driverRoutes); // Use driver routes as root
 app.get('/ping', (req, res) => {
   res.status(200).send('Server is alive');
 });

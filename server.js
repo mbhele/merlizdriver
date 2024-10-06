@@ -22,14 +22,14 @@ const customerRoutes = require('./routes/customer');
 const passwordResetRoutes = require('./routes/passwordReset');
 const foodFolderRoutes = require('./routes/foodFolder');
 const riderRoutes = require('./routes/rider');
-const tripRoutes = require('./routes/trip'); // Trip-related routes including notifications
+const tripRoutes = require('./routes/trip');
 const locationRoutes = require('./routes/location');
 const chatRoutes = require('./routes/chat');
 const productRoutes = require('./routes/productRoutes');
 const apiProductRoutes = require('./routes/apiProductRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const driverRoutes = require('./routes/driver');
-const tripCancellationRoutes = require('./routes/tripCancellationRoutes'); // Import the cancellation routes
+const tripCancellationRoutes = require('./routes/tripCancellationRoutes'); 
 
 // Initialize Express app and HTTP server
 const app = express();
@@ -38,7 +38,7 @@ const server = http.createServer(app);
 // Initialize Socket.IO with the server and configure CORS
 const io = socketio(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || 'https://merlizholdings.co.za', // Allow custom domain
+    origin: process.env.CORS_ORIGIN || 'https://merlizholdings.co.za',
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -81,7 +81,6 @@ io.on('connection', (socket) => {
     console.log(`Driver ${driverId} sent location update for trip ${tripId}:`, location);
 
     try {
-      // Find the trip by ID and update location
       const trip = await Trip.findById(tripId);
       if (trip) {
         trip.locationUpdates.push({
@@ -103,8 +102,6 @@ io.on('connection', (socket) => {
 
     if (accepted) {
       console.log(`Driver ${driverId} accepted trip ${tripId}`);
-
-      // Emit the tripApproved message to the rider's room
       io.to(tripId).emit('message', {
         type: 'tripApproved',
         text: 'Your trip has been accepted by the driver.',
@@ -118,7 +115,6 @@ io.on('connection', (socket) => {
     const { tripId, driverId, reason, location, time } = data;
     console.log(`Trip ${tripId} cancelled by driver ${driverId}. Reason: ${reason}, Location: ${JSON.stringify(location)}, Time: ${time}`);
 
-    // Emit the tripCancelled event to the rider in the trip room
     io.to(tripId).emit('tripCancelled', {
       tripId,
       driverId,
@@ -132,10 +128,8 @@ io.on('connection', (socket) => {
   socket.on('tripCancelledByRider', (data, callback) => {
     const { tripId, riderId, reason, time } = data;
 
-    // Log the trip cancellation event
     console.log(`Trip ${tripId} cancelled by rider ${riderId}. Reason: ${reason}, Time: ${time}`);
 
-    // Emit the tripCancelled event to notify the driver in the trip room
     io.to(tripId).emit('tripCancelled', {
       tripId,
       riderId,
@@ -143,7 +137,6 @@ io.on('connection', (socket) => {
       time,
     });
 
-    // Acknowledge receipt of cancellation event
     if (callback) callback({ status: 'received' });
   });
 
@@ -153,7 +146,6 @@ io.on('connection', (socket) => {
 
     console.log(`Driver ${driverId} has arrived at the destination for trip ${tripId}. Time: ${time}`);
 
-    // Emit the arrival event to the rider in the trip room
     io.to(tripId).emit('message', {
       type: 'arrivedAtDestination',
       text: 'The driver has arrived at your destination.',
@@ -174,7 +166,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'https://merlizholdings.co.za', // Update this with your front-end URL
+  origin: process.env.CORS_ORIGIN || 'https://merlizholdings.co.za',
   credentials: true,
 }));
 
@@ -192,7 +184,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({ mongoUrl: process.env.DB_URL, collectionName: 'sessions' }),
-  cookie: { secure: false, maxAge: 1000 * 60 * 60 * 24 }, // 1-day session expiration
+  cookie: { secure: false, maxAge: 1000 * 60 * 60 * 24 },
 }));
 
 // Passport.js setup
@@ -213,11 +205,27 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
-
-// Attach transporter to app for access in routes
 app.set('transporter', transporter);
 
-// Routes and Endpoints are mounted as they were provided
+// Routes and Endpoints
+app.use('/admin', adminRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/seller', sellerRoutes);
+app.use('/customer', customerRoutes);
+app.use('/api/password-reset', passwordResetRoutes);
+app.use('/foodFolder', foodFolderRoutes);
+app.use('/api/rider', riderRoutes);
+app.use('/api/trip', tripRoutes);
+app.use('/socket', locationRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/products', productRoutes);
+app.use('/api/products', apiProductRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/driver', driverRoutes);
+app.use('/', driverRoutes);
+app.get('/ping', (req, res) => {
+  res.status(200).send('Server is alive');
+});
 
 // Start server
 const PORT = process.env.PORT || 5000;

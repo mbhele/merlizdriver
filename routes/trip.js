@@ -208,7 +208,7 @@ router.post('/approve/:tripId', ensureAuthenticated, ensureRole(['driver', 'admi
 
     const mailOptions = {
       from: '1mbusombhele@gmail.com',
-      to: 'mbusisenimbhele@gmail.com,merlizholdings@gmail.com',
+      to: 'mbusisenimbhele@gmail.com',
       subject: 'Trip Approved Notification',
       text: `A trip has been approved by a driver.\n\nTrip ID: ${trip._id}\nDriver: ${driver.name}\nPlate Number: ${plateNumber}`,
     };
@@ -253,7 +253,7 @@ router.post('/reject/:tripId', ensureAuthenticated, ensureRole(['driver', 'admin
 
     const mailOptions = {
       from: '1mbusombhele@gmail.com',
-      to: 'mbusisenimbhele@gmail.com,merlizholdings@gmail.com',
+      to: 'mbusisenimbhele@gmail.com',
       subject: 'Trip Rejected Notification',
       text: `A trip has been rejected by a driver.\n\nTrip ID: ${trip._id}\nDriver: ${driver.name}\nRejection Reason: ${trip.rejectionReason}`,
     };

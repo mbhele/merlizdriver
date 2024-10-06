@@ -12,7 +12,7 @@ const http = require('http');
 const methodOverride = require('method-override');
 const nodemailer = require('nodemailer');
 const socketio = require('socket.io');
-const Trip = require('./models/Trip'); // Assuming you already have your Trip model
+const Trip = require('./models/Trip'); // Ensure this path is correct
 
 // Importing routes
 const adminRoutes = require('./routes/admin');
@@ -35,24 +35,22 @@ const tripCancellationRoutes = require('./routes/tripCancellationRoutes'); // Im
 const app = express();
 const server = http.createServer(app);
 
-// **1. Configure Socket.IO with CORS Settings**
+// **1. Trust Proxy**
+app.set('trust proxy', 1); // Trust first proxy
+
+// **2. Socket.IO Configuration with CORS**
 const io = socketio(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || 'https://merlizholdings.co.za', // Allow your custom domain
+    origin: process.env.CORS_ORIGIN || 'https://merlizholdings.co.za',
     methods: ['GET', 'POST'],
     credentials: true,
   },
 });
 
-// **2. Trust Proxy Settings**
-// If your app is behind a proxy (like Nginx), you need to enable trust proxy
-// This is important for securing cookies when using HTTPS
-app.set('trust proxy', 1);
-
 // Set Socket.IO instance to be accessible throughout the app
 app.set('socketio', io);
 
-// Socket.IO Connection
+// **3. Socket.IO Connection Handling**
 io.on('connection', (socket) => {
   console.log(`New client connected: ${socket.id}`);
 
@@ -108,8 +106,6 @@ io.on('connection', (socket) => {
 
     if (accepted) {
       console.log(`Driver ${driverId} accepted trip ${tripId}`);
-
-      // Emit the tripApproved message to the rider's room
       io.to(tripId).emit('message', {
         type: 'tripApproved',
         text: 'Your trip has been accepted by the driver.',
@@ -123,7 +119,6 @@ io.on('connection', (socket) => {
     const { tripId, driverId, reason, location, time } = data;
     console.log(`Trip ${tripId} cancelled by driver ${driverId}. Reason: ${reason}, Location: ${JSON.stringify(location)}, Time: ${time}`);
 
-    // Emit the tripCancelled event to the rider in the trip room
     io.to(tripId).emit('tripCancelled', {
       tripId,
       driverId,
@@ -137,10 +132,8 @@ io.on('connection', (socket) => {
   socket.on('tripCancelledByRider', (data, callback) => {
     const { tripId, riderId, reason, time } = data;
 
-    // Log the trip cancellation event
     console.log(`Trip ${tripId} cancelled by rider ${riderId}. Reason: ${reason}, Time: ${time}`);
 
-    // Emit the tripCancelled event to notify the driver in the trip room
     io.to(tripId).emit('tripCancelled', {
       tripId,
       riderId,
@@ -148,7 +141,6 @@ io.on('connection', (socket) => {
       time,
     });
 
-    // Acknowledge receipt of cancellation event
     if (callback) callback({ status: 'received' });
   });
 
@@ -158,7 +150,6 @@ io.on('connection', (socket) => {
 
     console.log(`Driver ${driverId} has arrived at the destination for trip ${tripId}. Time: ${time}`);
 
-    // Emit the arrival event to the rider in the trip room
     io.to(tripId).emit('message', {
       type: 'arrivedAtDestination',
       text: 'The driver has arrived at your destination.',
@@ -173,19 +164,19 @@ io.on('connection', (socket) => {
   });
 });
 
-// **3. Middleware Setup**
+// **4. Middleware Setup**
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(methodOverride('_method'));
 
-// **4. Configure CORS Middleware for Express**
+// **5. CORS Configuration for Express**
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'https://merlizholdings.co.za', // Update this with your front-end URL
+  origin: process.env.CORS_ORIGIN || 'https://merlizholdings.co.za',
   credentials: true,
 }));
 
-// **5. MongoDB Connection**
+// **6. MongoDB Connection**
 mongoose.connect(process.env.DB_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -193,30 +184,30 @@ mongoose.connect(process.env.DB_URL, {
   .then(() => console.log('Connected to MongoDB'))
   .catch(err => console.error('MongoDB connection error:', err));
 
-// **6. Session Management**
+// **7. Session Management**
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({ mongoUrl: process.env.DB_URL, collectionName: 'sessions' }),
   cookie: { 
-    secure: process.env.NODE_ENV === 'production', // Set to true in production
+    secure: process.env.NODE_ENV === 'production', // Ensures cookies are only sent over HTTPS in production
     maxAge: 1000 * 60 * 60 * 24, // 1-day session expiration
     sameSite: 'lax', // Helps protect against CSRF attacks
   },
 }));
 
-// **7. Passport.js Setup**
+// **8. Passport.js Setup**
 app.use(flash());
 app.use(passport.initialize());
 app.use(passport.session());
 require('./config/passport')(passport);
 
-// **8. Set Up Views and Static Files**
+// **9. Set Up Views and Static Files**
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// **9. Nodemailer Transporter Setup**
+// **10. Nodemailer Transporter Setup**
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -224,10 +215,9 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
-// Attach transporter to app for access in routes
 app.set('transporter', transporter);
 
-// **10. Define Routes and Endpoints**
+// **11. Define Routes and Endpoints**
 app.use('/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/seller', sellerRoutes);
@@ -245,13 +235,16 @@ app.use('/api/orders', orderRoutes);
 app.use('/driver', driverRoutes);
 app.use('/', driverRoutes); // Use driver routes as root
 
-// Health Check Endpoint
+// **12. Health Check Endpoint**
 app.get('/ping', (req, res) => {
   res.status(200).send('Server is alive');
 });
 
-// **11. Define Additional Endpoints for Messaging**
-// Endpoint to send a message to any room (driver or rider)
+// **13. Define Additional Endpoints for Messaging**
+
+/**
+ * Endpoint to send a message to any room (driver or rider)
+ */
 app.post('/api/send-message', (req, res) => {
   const { message, roomId } = req.body;
 
@@ -267,7 +260,9 @@ app.post('/api/send-message', (req, res) => {
   res.status(200).json({ message: 'Message sent successfully.' });
 });
 
-// Endpoint to send a message from driver to rider
+/**
+ * Endpoint to send a message from driver to rider
+ */
 app.post('/api/send-driver-message', (req, res) => {
   const { message, riderRoom } = req.body;
 
@@ -281,7 +276,9 @@ app.post('/api/send-driver-message', (req, res) => {
   res.status(200).json({ message: 'Message sent to rider successfully.' });
 });
 
-// Endpoint to send a message from rider to driver
+/**
+ * Endpoint to send a message from rider to driver
+ */
 app.post('/api/send-rider-message', (req, res) => {
   const { message, driverRoom } = req.body;
 
@@ -295,7 +292,9 @@ app.post('/api/send-rider-message', (req, res) => {
   res.status(200).json({ message: 'Message sent to driver successfully.' });
 });
 
-// Endpoint to notify a rider with a custom message
+/**
+ * Endpoint to notify a rider with a custom message
+ */
 app.post('/api/notify-rider', (req, res) => {
   const { message, riderRoom } = req.body;
 
@@ -311,7 +310,9 @@ app.post('/api/notify-rider', (req, res) => {
   res.status(200).json({ message: 'Message sent to rider successfully.' });
 });
 
-// Endpoint to test sending a message to the rider
+/**
+ * Endpoint to test sending a message to the rider
+ */
 app.post('/api/test-send-message', (req, res) => {
   const { tripId, message } = req.body;
 
@@ -331,7 +332,7 @@ app.post('/api/test-send-message', (req, res) => {
   res.status(200).json({ message: 'Test message sent successfully.' });
 });
 
-// **12. Start Server**
+// **14. Start Server**
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, (err) => {
   if (err) {

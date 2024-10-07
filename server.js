@@ -331,6 +331,7 @@ app.post('/api/test-send-message', (req, res) => {
 
   res.status(200).json({ message: 'Test message sent successfully.' });
 });
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // **14. Start Server**
 const PORT = process.env.PORT || 5000;

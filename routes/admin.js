@@ -8,6 +8,15 @@ const mongoose = require('mongoose');
 
 // Middleware to check for valid ObjectId
 const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+// Landing Page Route
+// Landing Page Route
+// Landing Page Route
+router.get('/', (req, res) => {
+  const isLoggedIn = false; // Set a default value for isLoggedIn
+  res.render('landing', { isLoggedIn }); // Pass isLoggedIn to the view
+});
+
+
 
 // Admin Login GET handler (renders the login page)
 router.get('/admin-login', (req, res) => {

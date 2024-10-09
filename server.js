@@ -14,6 +14,9 @@ const nodemailer = require('nodemailer');
 const socketio = require('socket.io');
 const Trip = require('./models/Trip'); // Ensure this path is correct
 
+
+// app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 // Importing routes
 const adminRoutes = require('./routes/admin');
 const authRoutes = require('./routes/auth');
@@ -26,7 +29,7 @@ const tripRoutes = require('./routes/trip'); // Trip-related routes including no
 const locationRoutes = require('./routes/location');
 const chatRoutes = require('./routes/chat');
 const productRoutes = require('./routes/productRoutes');
-const apiProductRoutes = require('./routes/apiProductRoutes');
+// const apiProductRoutes = require('./routes/apiProductRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const driverRoutes = require('./routes/driver');
 const tripCancellationRoutes = require('./routes/tripCancellationRoutes'); // Import the cancellation routes
@@ -34,6 +37,11 @@ const tripCancellationRoutes = require('./routes/tripCancellationRoutes'); // Im
 // Initialize Express app and HTTP server
 const app = express();
 const server = http.createServer(app);
+app.get('/favicon.ico', (req, res) => res.status(204).end());
+// Route to render landing.ejs
+app.get('/', (req, res) => {
+  res.render('landing');
+});
 
 // **1. Trust Proxy**
 app.set('trust proxy', 1); // Trust first proxy
@@ -46,6 +54,7 @@ const io = socketio(server, {
     credentials: true,
   },
 });
+// app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // Set Socket.IO instance to be accessible throughout the app
 app.set('socketio', io);
@@ -227,7 +236,7 @@ app.use('/api/trip', tripRoutes); // Trip routes, including notifications
 app.use('/socket', locationRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/products', productRoutes);
-app.use('/api/products', apiProductRoutes);
+// app.use('/api/products', apiProductRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/driver', driverRoutes);
 app.use('/', driverRoutes); // Use driver routes as root
@@ -238,10 +247,16 @@ app.get('/ping', (req, res) => {
 });
 
 // **13. Define Additional Endpoints for Messaging**
+// Serve the landing page at the root
 
 /**
  * Endpoint to send a message to any room (driver or rider)
  */
+
+
+// Route to handle favicon requests and return no content
+// app.get('/favicon.ico', (req, res) => res.status(204).end());
+
 app.post('/api/send-message', (req, res) => {
   const { message, roomId } = req.body;
 
@@ -328,7 +343,7 @@ app.post('/api/test-send-message', (req, res) => {
 
   res.status(200).json({ message: 'Test message sent successfully.' });
 });
-app.get('/favicon.ico', (req, res) => res.status(204).end());
+// app.get('/favicon.ico', (req, res) => res.status(204).end());
 
 // **14. Start Server**
 const PORT = process.env.PORT || 5000;

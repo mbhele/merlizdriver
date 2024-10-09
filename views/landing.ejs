@@ -52,7 +52,7 @@
       margin-right: auto;
     }
 
-    .navbar nav a, .navbar form button {
+    .navbar nav a {
       background-color: #000;
       color: #FFD700;
       padding: 10px 20px;
@@ -62,7 +62,7 @@
       transition: background 0.3s ease;
     }
 
-    .navbar nav a:hover, .navbar form button:hover {
+    .navbar nav a:hover {
       background-color: #333;
       transform: scale(1.05);
     }
@@ -202,31 +202,7 @@
       <i class="fas fa-bars"></i>
     </div>
     <nav>
-      <% if (!isLoggedIn) { %>
-        <a href="/admin/admin-login"><i class="fas fa-user-shield"></i> Admin Login</a>
-      <% } else { %>
-        <a href="admin/dashboard" style="text-decoration: none;">
-          <button style="
-            background-color: #ffd700;
-            color: #000000;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-family: Arial, sans-serif;
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
-            transition: background-color 0.3s ease, color 0.3s ease;
-          ">
-            Dashboard
-          </button>
-        </a>
-        
-        <span class="welcome-message">Welcome, <%= user.username %>!</span>
-        <form action="/logout" method="post">
-          <button type="submit" id="signout"><i class="fas fa-sign-out-alt"></i> Logout</button>
-        </form>
-      <% } %>
+      <a href="/admin/admin-login"><i class="fas fa-user-shield"></i> Admin Login</a>
     </nav>
   </header>
 

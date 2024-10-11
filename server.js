@@ -33,6 +33,10 @@ const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const driverRoutes = require('./routes/driver');
 const tripCancellationRoutes = require('./routes/tripCancellationRoutes'); // Import the cancellation routes
+// Importing the new review routes
+const reviewRoutes = require('./routes/review');
+
+
 
 // Initialize Express app and HTTP server
 const app = express();
@@ -223,7 +227,13 @@ const transporter = nodemailer.createTransport({
 });
 app.set('transporter', transporter);
 
+
+
+
+
 // **11. Define Routes and Endpoints**
+// Add the review routes to the app
+
 app.use('/admin', adminRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/seller', sellerRoutes);
@@ -232,7 +242,7 @@ app.use('/api/password-reset', passwordResetRoutes);
 app.use('/foodFolder', foodFolderRoutes);
 app.use('/api/rider', riderRoutes);
 app.use('/api/trip', tripRoutes); // Trip routes, including notifications
-
+app.use('/api/reviews', reviewRoutes);
 app.use('/socket', locationRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/products', productRoutes);

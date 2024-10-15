@@ -52,7 +52,7 @@
             background-color: #111;
         }
 
-        .approve-btn, .reject-btn, .freeze-btn, .unfreeze-btn {
+        .approve-btn, .reject-btn {
             background-color: #ffd700;
             color: #000;
             padding: 5px 10px;
@@ -64,7 +64,7 @@
             margin: 10px;
         }
 
-        .approve-btn:hover, .reject-btn:hover, .freeze-btn:hover, .unfreeze-btn:hover {
+        .approve-btn:hover, .reject-btn:hover {
             background-color: #ffbf00;
         }
 
@@ -114,7 +114,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>Driver: <%= driver.name || driver.userId.username %> (<%= driver.email || driver.userId.email %>)</h1>
+        <h1>Driver: <%= driver.userId.username %> (<%= driver.userId.email %>)</h1>
 
         <!-- Driver Details Section -->
         <div>
@@ -189,7 +189,7 @@
                 </tr>
             </thead>
             <tbody>
-                <% if (driver.rideHistory && driver.rideHistory.length > 0) { %>
+                <% if (driver.rideHistory.length > 0) { %>
                     <% driver.rideHistory.forEach(trip => { %>
                         <tr>
                             <td><%= trip.origin %></td>
@@ -208,10 +208,10 @@
                                     </form>
                                 <% } %>
                                 <% if (!trip.approved && trip.status !== 'frozen') { %>
-                                    <form action="/admin/approve/<%= trip._id %>" method="POST" style="display:inline;">
+                                    <form action="/api/trip/approve/<%= trip._id %>" method="POST" style="display:inline;">
                                         <button type="submit" class="approve-btn"><i class="fas fa-check"></i> Approve</button>
                                     </form>
-                                    <form action="/admin/reject/<%= trip._id %>" method="POST" style="display:inline;">
+                                    <form action="/api/trip/reject/<%= trip._id %>" method="POST" style="display:inline;">
                                         <button type="submit" class="reject-btn"><i class="fas fa-times"></i> Reject</button>
                                     </form>
                                 <% } %>
@@ -247,16 +247,11 @@
     src="https://maps.googleapis.com/maps/api/js?key=GOOGLE_MAPS_API_KEY&callback=initMap"></script>
     <script>
         function initMap() {
-            const driverLocation = {
-                lat: <%= driver.currentLocation && driver.currentLocation.coordinates ? driver.currentLocation.coordinates[1] : 0 %>,
-                lng: <%= driver.currentLocation && driver.currentLocation.coordinates ? driver.currentLocation.coordinates[0] : 0 %>
-            };
-
+            const driverLocation = { lat: <%= driver.currentLocation.coordinates[1] %>, lng: <%= driver.currentLocation.coordinates[0] %> };
             const map = new google.maps.Map(document.getElementById("map"), {
                 zoom: 12,
                 center: driverLocation,
             });
-
             const marker = new google.maps.Marker({
                 position: driverLocation,
                 map: map,

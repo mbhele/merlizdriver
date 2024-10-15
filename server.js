@@ -91,6 +91,12 @@ io.on('connection', (socket) => {
     console.log(`Client ${socket.id} successfully joined room: ${roomId}`);
   });
 
+  // New event for client (admin) to join the driver's room
+  socket.on('joinDriverRoom', ({ driverId }) => {
+    console.log(`Client ${socket.id} is joining driver room: ${driverId}`);
+    socket.join(driverId);
+  });
+
   // Handle driver's location update
   socket.on('driverLocationUpdate', async (data) => {
     const { tripId, driverId, location } = data;
@@ -106,7 +112,12 @@ io.on('connection', (socket) => {
           timestamp: new Date(),
         });
         await trip.save();
+
+        // Emit to the trip room (for riders)
         io.to(tripId).emit('driverLocationUpdate', { tripId, driverId, location });
+
+        // Emit to the driver room (for admin dashboard)
+        io.to(driverId).emit('driverLocationUpdate', { tripId, driverId, location });
       }
     } catch (error) {
       console.error('Error saving location update:', error);
@@ -176,7 +187,6 @@ io.on('connection', (socket) => {
     console.log(`Client disconnected: ${socket.id}`);
   });
 });
-
 // **4. Middleware Setup**
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));

@@ -12,7 +12,9 @@
     <!-- Lightbox CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
     <!-- Leaflet CSS (Map Library) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+        integrity="sha256-sA+e3qXykX1mqKUIPDXhoKdkkbva9Fa6KyQc7qW6mXQ="
+        crossorigin=""/>
     <style>
         body {
             background-color: #000; /* Black background */
@@ -120,6 +122,18 @@
             border: 2px solid #ffd700; /* Gold border */
             border-radius: 8px;
         }
+
+        /* Additional styles for cancellation details */
+        .cancellation-details {
+            background-color: #222;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .cancellation-details h3 {
+            margin-top: 0;
+        }
     </style>
 </head>
 <body>
@@ -134,6 +148,26 @@
             <p><strong>Vehicle:</strong> <%= driver.vehicle.make %> <%= driver.vehicle.model %> - <%= driver.vehicle.plateNumber %></p>
             <p><strong>Status:</strong> <%= driver.status %></p>
             <p><strong>Approval Status:</strong> <%= driver.approvalStatus %></p>
+            <p><strong>Total Trips Completed:</strong> <%= driver.completedTripsCount %></p>
+            <p><strong>Total Cancellations:</strong> <%= driver.cancellations.length %></p>
+
+            <!-- Cancellation Details -->
+            <% if (driver.cancellations && driver.cancellations.length > 0) { %>
+                <div class="cancellation-details">
+                    <h3>Cancellation Details</h3>
+                    <% driver.cancellations.forEach(function(cancellation, index) { %>
+                        <div>
+                            <p><strong>Cancellation #<%= index + 1 %></strong></p>
+                            <p><strong>Reason:</strong> <%= cancellation.reason %></p>
+                            <p><strong>Location:</strong> Latitude: <%= cancellation.location.latitude %>, Longitude: <%= cancellation.location.longitude %></p>
+                            <p><strong>Time:</strong> <%= cancellation.time %></p>
+                        </div>
+                        <% if (index !== driver.cancellations.length - 1) { %>
+                            <hr style="border-color: #ffd700;">
+                        <% } %>
+                    <% }); %>
+                </div>
+            <% } %>
 
             <!-- Map Section -->
             <h3>Driver's Current Location</h3>
@@ -203,9 +237,8 @@
                 </tr>
             </thead>
             <tbody>
-                <% if (driver.rideHistory.length > 0) { %>
+                <% if (driver.rideHistory && driver.rideHistory.length > 0) { %>
                     <% driver.rideHistory.forEach(trip => { %>
-                        <% if (trip.status !== 'cancelled') { %>
                         <tr>
                             <td><%= trip.origin %></td>
                             <td><%= trip.destination %></td>
@@ -232,63 +265,10 @@
                                 <% } %>
                             </td>
                         </tr>
-                        <% } %>
                     <% }); %>
                 <% } else { %>
                     <tr>
                         <td colspan="6" style="text-align: center;">No trips available for this driver.</td>
-                    </tr>
-                <% } %>
-            </tbody>
-        </table>
-
-        <!-- Cancelled Trips Section -->
-        <h2>Cancelled Trips</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Origin</th>
-                    <th>Destination</th>
-                    <th>Cancelled At</th>
-                    <th>Reason</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% const cancelledTrips = driver.rideHistory.filter(trip => trip.status === 'cancelled'); %>
-                <% if (cancelledTrips.length > 0) { %>
-                    <% cancelledTrips.forEach(trip => { %>
-                        <tr>
-                            <td><%= trip.origin %></td>
-                            <td><%= trip.destination %></td>
-                            <td>
-                                <% if (trip.cancellationDetails && trip.cancellationDetails.time) { %>
-                                    <%= new Date(trip.cancellationDetails.time).toLocaleString() %>
-                                <% } else { %>
-                                    N/A
-                                <% } %>
-                            </td>
-                            <td>
-                                <% if (trip.cancellationDetails && trip.cancellationDetails.reason) { %>
-                                    <%= trip.cancellationDetails.reason %>
-                                <% } else { %>
-                                    N/A
-                                <% } %>
-                            </td>
-                            <td>
-                                <% if (trip.cancellationDetails && trip.cancellationDetails.location) { %>
-                                    <button onclick="showCancellationOnMap(<%= trip.cancellationDetails.location.latitude %>, <%= trip.cancellationDetails.location.longitude %>)">
-                                        Show on Map
-                                    </button>
-                                <% } else { %>
-                                    N/A
-                                <% } %>
-                            </td>
-                        </tr>
-                    <% }); %>
-                <% } else { %>
-                    <tr>
-                        <td colspan="5" style="text-align: center;">No cancelled trips for this driver.</td>
                     </tr>
                 <% } %>
             </tbody>
@@ -300,76 +280,67 @@
     <!-- Lightbox JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
     <!-- Leaflet JS (Map Library) -->
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+        integrity="sha256-o9N1jAt1EwSPWrQ+AtzbYI1yQUsEZI+g6VPp1Z9F/IQ="
+        crossorigin=""></script>
     <!-- Socket.IO -->
     <script src="/socket.io/socket.io.js"></script>
+    <!-- Your custom script -->
     <script>
-        // Initialize Swiper
-        var swiper = new Swiper('.swiper-container', {
-            slidesPerView: 1,
-            spaceBetween: 10,
-            navigation: {
-                nextEl: '.swiper-button-next',
-                prevEl: '.swiper-button-prev',
-            },
-            loop: false,
-        });
+        document.addEventListener('DOMContentLoaded', function () {
+            // Initialize Swiper
+            var swiper = new Swiper('.swiper-container', {
+                slidesPerView: 1,
+                spaceBetween: 10,
+                navigation: {
+                    nextEl: '.swiper-button-next',
+                    prevEl: '.swiper-button-prev',
+                },
+                loop: false,
+            });
 
-        // Initialize Map
-        var map = L.map('map').setView([0, 0], 13); // Default view, will be updated
+            // Initialize Map
+            var map = L.map('map').setView([0, 0], 13); // Default view, will be updated
 
-        // Add OpenStreetMap tiles
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
 
-        // Marker for the driver's location
-        var driverMarker = L.marker([0, 0]).addTo(map);
+            // Marker for the driver's location
+            var driverMarker = L.marker([0, 0]).addTo(map);
 
-        // Function to update the driver's location on the map
-        function updateDriverLocation(latitude, longitude) {
-            var latLng = L.latLng(latitude, longitude);
-            driverMarker.setLatLng(latLng);
-            map.setView(latLng, 13); // Adjust the map view to the new location
-        }
-
-        // Connect to Socket.IO
-        var socket = io();
-
-        // Join the driver's room
-        socket.emit('joinDriverRoom', { driverId: '<%= driver._id %>' });
-
-        // Listen for location updates
-        socket.on('driverLocationUpdate', function(data) {
-            if (data.driverId === '<%= driver._id %>') {
-                var location = data.location;
-                console.log('Received location update:', location);
-                updateDriverLocation(location.latitude, location.longitude);
+            // Function to update the driver's location on the map
+            function updateDriverLocation(latitude, longitude) {
+                var latLng = L.latLng(latitude, longitude);
+                driverMarker.setLatLng(latLng);
+                map.setView(latLng, 13); // Adjust the map view to the new location
             }
+
+            // Connect to Socket.IO
+            var socket = io();
+
+            // Join the driver's room
+            socket.emit('joinDriverRoom', { driverId: '<%= driver._id %>' });
+
+            // Listen for location updates
+            socket.on('driverLocationUpdate', function(data) {
+                if (data.driverId === '<%= driver._id %>') {
+                    var location = data.location;
+                    console.log('Received location update:', location);
+                    updateDriverLocation(location.latitude, location.longitude);
+                }
+            });
+
+            // Fetch the driver's last known location from the server-side data
+            <% if (driver.currentLocation && driver.currentLocation.latitude && driver.currentLocation.longitude) { %>
+                updateDriverLocation(<%= driver.currentLocation.latitude %>, <%= driver.currentLocation.longitude %>);
+            <% } else { %>
+                // If no location is available, set a default location or handle accordingly
+                console.log('No current location available for the driver.');
+                map.setView([0, 0], 2); // World view
+            <% } %>
         });
-
-        // Fetch the driver's last known location from the server-side data
-        <% if (driver.currentLocation) { %>
-            updateDriverLocation(<%= driver.currentLocation.latitude %>, <%= driver.currentLocation.longitude %>);
-        <% } else { %>
-            // If no location is available, you might set a default or handle it accordingly
-            console.log('No current location available for the driver.');
-        <% } %>
-
-        // Function to show cancellation location on the map
-        function showCancellationOnMap(latitude, longitude) {
-            var latLng = L.latLng(latitude, longitude);
-
-            // Add a marker for the cancellation location
-            L.marker(latLng, {icon: L.icon({
-                iconUrl: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-                iconSize: [32, 32],
-                iconAnchor: [16, 32],
-            })}).addTo(map).bindPopup('Cancellation Location').openPopup();
-
-            // Center the map on the cancellation location
-            map.setView(latLng, 13);
-        }
     </script>
 </body>
 </html>

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,6 +18,7 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
+            overflow-x: hidden;
         }
 
         .container {
@@ -54,7 +56,7 @@
             background-color: #111; /* Slightly darker black for table cells */
         }
 
-        .approve-btn, .reject-btn, .ban-btn, .freeze-btn, .unfreeze-btn {
+        .approve-btn, .reject-btn, .freeze-btn, .unfreeze-btn {
             background-color: #ffd700; /* Gold background */
             color: #000; /* Black text */
             padding: 5px 10px;
@@ -66,7 +68,7 @@
             margin: 10px; /* Added margin for spacing */
         }
 
-        .approve-btn:hover, .reject-btn:hover, .ban-btn:hover, .freeze-btn:hover, .unfreeze-btn:hover {
+        .approve-btn:hover, .reject-btn:hover, .freeze-btn:hover, .unfreeze-btn:hover {
             background-color: #ffbf00; /* Slightly darker gold */
         }
 
@@ -84,8 +86,9 @@
         }
 
         .license-images img {
-            width: 380px; /* Increased image size */
-            height: 228px; /* Adjusted height proportionally */
+            width: 100%;
+            max-width: 380px; /* Maximum width */
+            height: auto;
             margin: 0 auto;
             border-radius: 8px;
             border: 2px solid #ffd700; /* Gold border */
@@ -168,7 +171,7 @@
                 </div>
             </div>
 
-            <!-- Approve, Reject, or Ban Driver -->
+            <!-- Approve or Reject Driver -->
             <form action="/admin/drivers/<%= driver._id %>/approve" method="POST" style="display:inline;">
                 <input type="hidden" name="action" value="approve">
                 <button type="submit" class="approve-btn">Approve</button>
@@ -176,10 +179,6 @@
             <form action="/admin/drivers/<%= driver._id %>/approve" method="POST" style="display:inline;">
                 <input type="hidden" name="action" value="reject">
                 <button type="submit" class="reject-btn">Reject</button>
-            </form>
-            <form action="/admin/drivers/<%= driver._id %>/ban" method="POST" style="display:inline;">
-                <input type="hidden" name="action" value="ban">
-                <button type="submit" class="ban-btn">Ban</button>
             </form>
         </div>
 

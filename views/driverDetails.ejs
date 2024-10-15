@@ -2,12 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Driver Details</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Stylesheets -->
     <link rel="stylesheet" href="/css/Detailsrides.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <!-- Swiper CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" />
+    <!-- Lightbox CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
+    <!-- Leaflet CSS (Map Library) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         body {
             background-color: #000; /* Black background */
@@ -106,6 +111,15 @@
         .swiper-button-prev {
             left: 20px; /* Bring the previous button closer to the image */
         }
+
+        /* Map container style */
+        #map {
+            height: 400px;
+            width: 100%;
+            margin-top: 20px;
+            border: 2px solid #ffd700; /* Gold border */
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
@@ -120,6 +134,10 @@
             <p><strong>Vehicle:</strong> <%= driver.vehicle.make %> <%= driver.vehicle.model %> - <%= driver.vehicle.plateNumber %></p>
             <p><strong>Status:</strong> <%= driver.status %></p>
             <p><strong>Approval Status:</strong> <%= driver.approvalStatus %></p>
+
+            <!-- Map Section -->
+            <h3>Driver's Current Location</h3>
+            <div id="map"></div>
 
             <!-- Display License Images using Swiper -->
             <div class="license-images">
@@ -223,9 +241,16 @@
         </table>
     </div>
 
+    <!-- Swiper JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js"></script>
+    <!-- Lightbox JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+    <!-- Leaflet JS (Map Library) -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
     <script>
+        // Initialize Swiper
         var swiper = new Swiper('.swiper-container', {
             slidesPerView: 1,
             spaceBetween: 10,
@@ -235,6 +260,47 @@
             },
             loop: false,
         });
+
+        // Initialize Map
+        var map = L.map('map').setView([0, 0], 13); // Default view, will be updated
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Marker for the driver's location
+        var driverMarker = L.marker([0, 0]).addTo(map);
+
+        // Function to update the driver's location on the map
+        function updateDriverLocation(latitude, longitude) {
+            var latLng = L.latLng(latitude, longitude);
+            driverMarker.setLatLng(latLng);
+            map.setView(latLng, 13); // Adjust the map view to the new location
+        }
+
+        // Connect to Socket.IO
+        var socket = io();
+
+        // Join the driver's room
+        socket.emit('joinDriverRoom', { driverId: '<%= driver._id %>' });
+
+        // Listen for location updates
+        socket.on('driverLocationUpdate', function(data) {
+            if (data.driverId === '<%= driver._id %>') {
+                var location = data.location;
+                console.log('Received location update:', location);
+                updateDriverLocation(location.latitude, location.longitude);
+            }
+        });
+
+        // Fetch the driver's last known location from the server-side data
+        <% if (driver.currentLocation) { %>
+            updateDriverLocation(<%= driver.currentLocation.latitude %>, <%= driver.currentLocation.longitude %>);
+        <% } else { %>
+            // If no location is available, you might set a default or handle it accordingly
+            console.log('No current location available for the driver.');
+        <% } %>
     </script>
 </body>
 </html>

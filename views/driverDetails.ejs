@@ -2,19 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Driver Details</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Stylesheets -->
+    <title>Driver Details</title>
     <link rel="stylesheet" href="/css/Detailsrides.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
-    <!-- Swiper CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" />
-    <!-- Lightbox CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
-    <!-- Leaflet CSS (Map Library) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-        integrity="sha256-sA+e3qXykX1mqKUIPDXhoKdkkbva9Fa6KyQc7qW6mXQ="
-        crossorigin=""/>
     <style>
         body {
             background-color: #000; /* Black background */
@@ -113,27 +106,6 @@
         .swiper-button-prev {
             left: 20px; /* Bring the previous button closer to the image */
         }
-
-        /* Map container style */
-        #map {
-            height: 400px;
-            width: 100%;
-            margin-top: 20px;
-            border: 2px solid #ffd700; /* Gold border */
-            border-radius: 8px;
-        }
-
-        /* Additional styles for cancellation details */
-        .cancellation-details {
-            background-color: #222;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-
-        .cancellation-details h3 {
-            margin-top: 0;
-        }
     </style>
 </head>
 <body>
@@ -148,30 +120,6 @@
             <p><strong>Vehicle:</strong> <%= driver.vehicle.make %> <%= driver.vehicle.model %> - <%= driver.vehicle.plateNumber %></p>
             <p><strong>Status:</strong> <%= driver.status %></p>
             <p><strong>Approval Status:</strong> <%= driver.approvalStatus %></p>
-            <p><strong>Total Trips Completed:</strong> <%= driver.completedTripsCount %></p>
-            <p><strong>Total Cancellations:</strong> <%= driver.cancellations.length %></p>
-
-            <!-- Cancellation Details -->
-            <% if (driver.cancellations && driver.cancellations.length > 0) { %>
-                <div class="cancellation-details">
-                    <h3>Cancellation Details</h3>
-                    <% driver.cancellations.forEach(function(cancellation, index) { %>
-                        <div>
-                            <p><strong>Cancellation #<%= index + 1 %></strong></p>
-                            <p><strong>Reason:</strong> <%= cancellation.reason %></p>
-                            <p><strong>Location:</strong> Latitude: <%= cancellation.location.latitude %>, Longitude: <%= cancellation.location.longitude %></p>
-                            <p><strong>Time:</strong> <%= cancellation.time %></p>
-                        </div>
-                        <% if (index !== driver.cancellations.length - 1) { %>
-                            <hr style="border-color: #ffd700;">
-                        <% } %>
-                    <% }); %>
-                </div>
-            <% } %>
-
-            <!-- Map Section -->
-            <h3>Driver's Current Location</h3>
-            <div id="map"></div>
 
             <!-- Display License Images using Swiper -->
             <div class="license-images">
@@ -237,7 +185,7 @@
                 </tr>
             </thead>
             <tbody>
-                <% if (driver.rideHistory && driver.rideHistory.length > 0) { %>
+                <% if (driver.rideHistory.length > 0) { %>
                     <% driver.rideHistory.forEach(trip => { %>
                         <tr>
                             <td><%= trip.origin %></td>
@@ -275,71 +223,17 @@
         </table>
     </div>
 
-    <!-- Swiper JS -->
     <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js"></script>
-    <!-- Lightbox JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
-    <!-- Leaflet JS (Map Library) -->
-    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-        integrity="sha256-o9N1jAt1EwSPWrQ+AtzbYI1yQUsEZI+g6VPp1Z9F/IQ="
-        crossorigin=""></script>
-    <!-- Socket.IO -->
-    <script src="/socket.io/socket.io.js"></script>
-    <!-- Your custom script -->
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Initialize Swiper
-            var swiper = new Swiper('.swiper-container', {
-                slidesPerView: 1,
-                spaceBetween: 10,
-                navigation: {
-                    nextEl: '.swiper-button-next',
-                    prevEl: '.swiper-button-prev',
-                },
-                loop: false,
-            });
-
-            // Initialize Map
-            var map = L.map('map').setView([0, 0], 13); // Default view, will be updated
-
-            // Add OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
-
-            // Marker for the driver's location
-            var driverMarker = L.marker([0, 0]).addTo(map);
-
-            // Function to update the driver's location on the map
-            function updateDriverLocation(latitude, longitude) {
-                var latLng = L.latLng(latitude, longitude);
-                driverMarker.setLatLng(latLng);
-                map.setView(latLng, 13); // Adjust the map view to the new location
-            }
-
-            // Connect to Socket.IO
-            var socket = io();
-
-            // Join the driver's room
-            socket.emit('joinDriverRoom', { driverId: '<%= driver._id %>' });
-
-            // Listen for location updates
-            socket.on('driverLocationUpdate', function(data) {
-                if (data.driverId === '<%= driver._id %>') {
-                    var location = data.location;
-                    console.log('Received location update:', location);
-                    updateDriverLocation(location.latitude, location.longitude);
-                }
-            });
-
-            // Fetch the driver's last known location from the server-side data
-            <% if (driver.currentLocation && driver.currentLocation.latitude && driver.currentLocation.longitude) { %>
-                updateDriverLocation(<%= driver.currentLocation.latitude %>, <%= driver.currentLocation.longitude %>);
-            <% } else { %>
-                // If no location is available, set a default location or handle accordingly
-                console.log('No current location available for the driver.');
-                map.setView([0, 0], 2); // World view
-            <% } %>
+        var swiper = new Swiper('.swiper-container', {
+            slidesPerView: 1,
+            spaceBetween: 10,
+            navigation: {
+                nextEl: '.swiper-button-next',
+                prevEl: '.swiper-button-prev',
+            },
+            loop: false,
         });
     </script>
 </body>

@@ -119,32 +119,45 @@
 </head>
 <body>
     <div class="container">
-        <h1>Driver: Ceba (Ceba@gmail.com)</h1>
+        <h1>Driver: <%= driver.name %> (<%= driver.email %>)</h1>
 
         <!-- Driver Details Section -->
         <div>
-            <img src="https://res.cloudinary.com/duouwjyrc/image/upload/v1726385999/upjf4fyjioop5y7bgzfy.jpg" alt="Driver Image" style="width:150px; height:150px; border-radius: 50%; border: 2px solid #ffd700;">
-            <p><strong>Email:</strong> Ceba@gmail.com</p>
-            <p><strong>Phone:</strong> 0682309494</p>
-            <p><strong>Vehicle:</strong> Vw V5 - GP 12727</p>
-            <p><strong>Status:</strong> idle</p>
-            <p><strong>Approval Status:</strong> approved</p>
+            <img src="<%= driver.profilePicture %>" alt="Driver Image" style="width:150px; height:150px; border-radius: 50%; border: 2px solid #ffd700;">
+            <p><strong>Email:</strong> <%= driver.email %></p>
+            <p><strong>Phone:</strong> <%= driver.phone %></p>
+            <p><strong>Vehicle:</strong> <%= driver.vehicle.make %> <%= driver.vehicle.model %> - <%= driver.vehicle.plateNumber %></p>
+            <p><strong>Status:</strong> <%= driver.status %></p>
+            <p><strong>Approval Status:</strong> <%= driver.approvalStatus %></p>
 
             <!-- Display License Images using Swiper -->
             <div class="license-images">
                 <h3>Driver's License Images</h3>
                 <div class="swiper-container">
                     <div class="swiper-wrapper">
-                        <div class="swiper-slide">
-                            <a href="https://res.cloudinary.com/duouwjyrc/image/upload/v1726386002/fysadcy0a9frh6qzsex9.png" data-lightbox="licenses" data-title="License Front">
-                                <img src="https://res.cloudinary.com/duouwjyrc/image/upload/v1726386002/fysadcy0a9frh6qzsex9.png" alt="License Front">
-                            </a>
-                        </div>
-                        <div class="swiper-slide">
-                            <a href="https://res.cloudinary.com/duouwjyrc/image/upload/v1726386004/maiclgpycrhg6vri7l00.png" data-lightbox="licenses" data-title="License Back">
-                                <img src="https://res.cloudinary.com/duouwjyrc/image/upload/v1726386004/maiclgpycrhg6vri7l00.png" alt="License Back">
-                            </a>
-                        </div>
+                        <% if (driver.licenseFront) { %>
+                            <div class="swiper-slide">
+                                <a href="<%= driver.licenseFront %>" data-lightbox="licenses" data-title="License Front">
+                                    <img src="<%= driver.licenseFront %>" alt="License Front">
+                                </a>
+                            </div>
+                        <% } else { %>
+                            <div class="swiper-slide">
+                                <p>No license front image available.</p>
+                            </div>
+                        <% } %>
+                        
+                        <% if (driver.licenseBack) { %>
+                            <div class="swiper-slide">
+                                <a href="<%= driver.licenseBack %>" data-lightbox="licenses" data-title="License Back">
+                                    <img src="<%= driver.licenseBack %>" alt="License Back">
+                                </a>
+                            </div>
+                        <% } else { %>
+                            <div class="swiper-slide">
+                                <p>No license back image available.</p>
+                            </div>
+                        <% } %>
                     </div>
                     <!-- Add Swiper Navigation -->
                     <div class="swiper-button-next"></div>
@@ -153,15 +166,15 @@
             </div>
 
             <!-- Approve, Reject, or Ban Driver -->
-            <form action="/admin/drivers/66e688b61e82a579b954e722/approve" method="POST" style="display:inline;">
+            <form action="/admin/drivers/<%= driver._id %>/approve" method="POST" style="display:inline;">
                 <input type="hidden" name="action" value="approve">
                 <button type="submit" class="approve-btn">Approve</button>
             </form>
-            <form action="/admin/drivers/66e688b61e82a579b954e722/approve" method="POST" style="display:inline;">
+            <form action="/admin/drivers/<%= driver._id %>/approve" method="POST" style="display:inline;">
                 <input type="hidden" name="action" value="reject">
                 <button type="submit" class="reject-btn">Reject</button>
             </form>
-            <form action="/admin/drivers/66e688b61e82a579b954e722/ban" method="POST" style="display:inline;">
+            <form action="/admin/drivers/<%= driver._id %>/ban" method="POST" style="display:inline;">
                 <input type="hidden" name="action" value="ban">
                 <button type="submit" class="ban-btn">Ban</button>
             </form>
@@ -181,9 +194,40 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td colspan="6" style="text-align: center;">No trips available for this driver.</td>
-                </tr>
+                <% if (driver.rideHistory.length > 0) { %>
+                    <% driver.rideHistory.forEach(trip => { %>
+                        <tr>
+                            <td><%= trip.origin %></td>
+                            <td><%= trip.destination %></td>
+                            <td class="<%= trip.approved ? 'approved' : 'pending' %>"><%= trip.status %></td>
+                            <td><%= trip.fare %></td>
+                            <td><%= trip.distance %> km</td>
+                            <td>
+                                <% if (trip.status !== 'frozen') { %>
+                                    <form action="/admin/freeze/<%= trip._id %>" method="POST" style="display:inline;">
+                                        <button type="submit" class="freeze-btn">Freeze</button>
+                                    </form>
+                                <% } else { %>
+                                    <form action="/admin/unfreeze/<%= trip._id %>" method="POST" style="display:inline;">
+                                        <button type="submit" class="unfreeze-btn">Unfreeze</button>
+                                    </form>
+                                <% } %>
+                                <% if (!trip.approved && trip.status !== 'frozen') { %>
+                                    <form action="/api/trip/approve/<%= trip._id %>" method="POST" style="display:inline;">
+                                        <button type="submit" class="approve-btn"><i class="fas fa-check"></i> Approve</button>
+                                    </form>
+                                    <form action="/api/trip/reject/<%= trip._id %>" method="POST" style="display:inline;">
+                                        <button type="submit" class="reject-btn"><i class="fas fa-times"></i> Reject</button>
+                                    </form>
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="6" style="text-align: center;">No trips available for this driver.</td>
+                    </tr>
+                <% } %>
             </tbody>
         </table>
 
@@ -210,7 +254,9 @@
 
         // Initialize Google Maps with Driver's Current Location
         function initMap() {
-            var driverLocation = { lat: -33.9116293, lng: 18.555778 }; // Driver's current location coordinates
+            var currentLocation = <%= JSON.stringify(driver.currentLocation.coordinates) %>;
+            var driverLocation = { lat: parseFloat(currentLocation[1]), lng: parseFloat(currentLocation[0]) };
+
             var map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 14,
                 center: driverLocation

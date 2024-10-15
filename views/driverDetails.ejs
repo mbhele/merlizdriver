@@ -10,8 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
     <style>
         body {
-            background-color: #000;
-            color: #fff;
+            background-color: #000; /* Black background */
+            color: #fff; /* White text */
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
@@ -21,14 +21,14 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #111;
+            background-color: #111; /* Darker background */
             border-radius: 8px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
         }
 
         h1, h2, h3 {
             text-align: center;
-            color: #ffd700;
+            color: #ffd700; /* Gold text */
         }
 
         table {
@@ -40,39 +40,39 @@
         th, td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #ffd700;
+            border-bottom: 1px solid #ffd700; /* Gold border */
         }
 
         th {
-            background-color: #222;
-            color: #ffd700;
+            background-color: #222; /* Darker background for header */
+            color: #ffd700; /* Gold text */
         }
 
         td {
-            background-color: #111;
+            background-color: #111; /* Slightly darker black for table cells */
         }
 
-        .approve-btn, .reject-btn {
-            background-color: #ffd700;
-            color: #000;
+        .approve-btn, .reject-btn, .ban-btn {
+            background-color: #ffd700; /* Gold background */
+            color: #000; /* Black text */
             padding: 5px 10px;
             border-radius: 5px;
             text-decoration: none;
             font-size: 0.9rem;
             cursor: pointer;
             border: none;
-            margin: 10px;
+            margin: 10px; /* Added margin for spacing */
         }
 
-        .approve-btn:hover, .reject-btn:hover {
-            background-color: #ffbf00;
+        .approve-btn:hover, .reject-btn:hover, .ban-btn:hover {
+            background-color: #ffbf00; /* Slightly darker gold */
         }
 
         .swiper-container {
             width: 100%;
-            height: 360px;
-            margin: 20px auto;
-            position: relative;
+            height: 360px; /* Adjust height for increased image size */
+            margin: 20px auto; /* Center the Swiper */
+            position: relative; /* Relative positioning for navigation buttons */
         }
 
         .swiper-slide {
@@ -82,77 +82,69 @@
         }
 
         .license-images img {
-            width: 380px;
-            height: 228px;
+            width: 380px; /* Increased image size */
+            height: 228px; /* Adjusted height proportionally */
             margin: 0 auto;
             border-radius: 8px;
-            border: 2px solid #ffd700;
-            cursor: pointer;
-            object-fit: cover;
+            border: 2px solid #ffd700; /* Gold border */
+            cursor: pointer; /* Indicate clickable images */
+            object-fit: cover; /* Ensure images are fully visible */
         }
 
         .swiper-button-next,
         .swiper-button-prev {
-            color: #ffd700;
-            top: 50%;
-            transform: translateY(-50%);
-            position: absolute;
+            color: #ffd700; /* Gold color for navigation buttons */
+            top: 50%; /* Vertically center the buttons */
+            transform: translateY(-50%); /* Adjust vertical position */
+            position: absolute; /* Position buttons absolutely */
         }
 
-        /* Remove bottom bar of the swiper */
-        .swiper-pagination-bullet {
-            display: none;
+        .swiper-button-next {
+            right: 20px; /* Bring the next button closer to the image */
         }
 
+        .swiper-button-prev {
+            left: 20px; /* Bring the previous button closer to the image */
+        }
+
+        /* Map styling */
         #map {
             height: 400px;
             width: 100%;
             margin-top: 20px;
             border-radius: 8px;
+            border: 2px solid #ffd700;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Driver: <%= driver.userId.username %> (<%= driver.userId.email %>)</h1>
+        <h1>Driver: Ceba (Ceba@gmail.com)</h1>
 
         <!-- Driver Details Section -->
         <div>
-            <img src="<%= driver.profilePicture %>" alt="Driver Image" style="width:150px; height:150px; border-radius: 50%; border: 2px solid #ffd700;">
-            <p><strong>Email:</strong> <%= driver.email %></p>
-            <p><strong>Phone:</strong> <%= driver.phone %></p>
-            <p><strong>Vehicle:</strong> <%= driver.vehicle.make %> <%= driver.vehicle.model %> - <%= driver.vehicle.plateNumber %></p>
-            <p><strong>Status:</strong> <%= driver.status %></p>
-            <p><strong>Approval Status:</strong> <%= driver.approvalStatus %></p>
+            <img src="https://res.cloudinary.com/duouwjyrc/image/upload/v1726385999/upjf4fyjioop5y7bgzfy.jpg" alt="Driver Image" style="width:150px; height:150px; border-radius: 50%; border: 2px solid #ffd700;">
+            <p><strong>Email:</strong> Ceba@gmail.com</p>
+            <p><strong>Phone:</strong> 0682309494</p>
+            <p><strong>Vehicle:</strong> Vw V5 - GP 12727</p>
+            <p><strong>Status:</strong> idle</p>
+            <p><strong>Approval Status:</strong> approved</p>
 
             <!-- Display License Images using Swiper -->
             <div class="license-images">
                 <h3>Driver's License Images</h3>
                 <div class="swiper-container">
                     <div class="swiper-wrapper">
-                        <% if (driver.licenseFront) { %>
-                            <div class="swiper-slide">
-                                <a href="<%= driver.licenseFront %>" data-lightbox="licenses" data-title="License Front">
-                                    <img src="<%= driver.licenseFront %>" alt="License Front">
-                                </a>
-                            </div>
-                        <% } else { %>
-                            <div class="swiper-slide">
-                                <p>No license front image available.</p>
-                            </div>
-                        <% } %>
-                        
-                        <% if (driver.licenseBack) { %>
-                            <div class="swiper-slide">
-                                <a href="<%= driver.licenseBack %>" data-lightbox="licenses" data-title="License Back">
-                                    <img src="<%= driver.licenseBack %>" alt="License Back">
-                                </a>
-                            </div>
-                        <% } else { %>
-                            <div class="swiper-slide">
-                                <p>No license back image available.</p>
-                            </div>
-                        <% } %>
+                        <div class="swiper-slide">
+                            <a href="https://res.cloudinary.com/duouwjyrc/image/upload/v1726386002/fysadcy0a9frh6qzsex9.png" data-lightbox="licenses" data-title="License Front">
+                                <img src="https://res.cloudinary.com/duouwjyrc/image/upload/v1726386002/fysadcy0a9frh6qzsex9.png" alt="License Front">
+                            </a>
+                        </div>
+                        <div class="swiper-slide">
+                            <a href="https://res.cloudinary.com/duouwjyrc/image/upload/v1726386004/maiclgpycrhg6vri7l00.png" data-lightbox="licenses" data-title="License Back">
+                                <img src="https://res.cloudinary.com/duouwjyrc/image/upload/v1726386004/maiclgpycrhg6vri7l00.png" alt="License Back">
+                            </a>
+                        </div>
                     </div>
                     <!-- Add Swiper Navigation -->
                     <div class="swiper-button-next"></div>
@@ -160,18 +152,18 @@
                 </div>
             </div>
 
-            <!-- Map Section -->
-            <h2>Driver Location</h2>
-            <div id="map"></div>
-
-            <!-- Approve or Reject Driver -->
-            <form action="/admin/drivers/<%= driver._id %>/approve" method="POST" style="display:inline;">
+            <!-- Approve, Reject, or Ban Driver -->
+            <form action="/admin/drivers/66e688b61e82a579b954e722/approve" method="POST" style="display:inline;">
                 <input type="hidden" name="action" value="approve">
                 <button type="submit" class="approve-btn">Approve</button>
             </form>
-            <form action="/admin/drivers/<%= driver._id %>/approve" method="POST" style="display:inline;">
+            <form action="/admin/drivers/66e688b61e82a579b954e722/approve" method="POST" style="display:inline;">
                 <input type="hidden" name="action" value="reject">
                 <button type="submit" class="reject-btn">Reject</button>
+            </form>
+            <form action="/admin/drivers/66e688b61e82a579b954e722/ban" method="POST" style="display:inline;">
+                <input type="hidden" name="action" value="ban">
+                <button type="submit" class="ban-btn">Ban</button>
             </form>
         </div>
 
@@ -189,47 +181,23 @@
                 </tr>
             </thead>
             <tbody>
-                <% if (driver.rideHistory.length > 0) { %>
-                    <% driver.rideHistory.forEach(trip => { %>
-                        <tr>
-                            <td><%= trip.origin %></td>
-                            <td><%= trip.destination %></td>
-                            <td class="<%= trip.approved ? 'approved' : 'pending' %>"><%= trip.status %></td>
-                            <td><%= trip.fare %></td>
-                            <td><%= trip.distance %> km</td>
-                            <td>
-                                <% if (trip.status !== 'frozen') { %>
-                                    <form action="/admin/freeze/<%= trip._id %>" method="POST" style="display:inline;">
-                                        <button type="submit" class="freeze-btn">Freeze</button>
-                                    </form>
-                                <% } else { %>
-                                    <form action="/admin/unfreeze/<%= trip._id %>" method="POST" style="display:inline;">
-                                        <button type="submit" class="unfreeze-btn">Unfreeze</button>
-                                    </form>
-                                <% } %>
-                                <% if (!trip.approved && trip.status !== 'frozen') { %>
-                                    <form action="/api/trip/approve/<%= trip._id %>" method="POST" style="display:inline;">
-                                        <button type="submit" class="approve-btn"><i class="fas fa-check"></i> Approve</button>
-                                    </form>
-                                    <form action="/api/trip/reject/<%= trip._id %>" method="POST" style="display:inline;">
-                                        <button type="submit" class="reject-btn"><i class="fas fa-times"></i> Reject</button>
-                                    </form>
-                                <% } %>
-                            </td>
-                        </tr>
-                    <% }); %>
-                <% } else { %>
-                    <tr>
-                        <td colspan="6" style="text-align: center;">No trips available for this driver.</td>
-                    </tr>
-                <% } %>
+                <tr>
+                    <td colspan="6" style="text-align: center;">No trips available for this driver.</td>
+                </tr>
             </tbody>
         </table>
+
+        <!-- Map Section (Driver's Current Location) -->
+        <h3>Driver's Current Location</h3>
+        <div id="map"></div>
     </div>
 
+    <!-- Google Maps JavaScript API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY"></script>
     <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
     <script>
+        // Initialize Swiper
         var swiper = new Swiper('.swiper-container', {
             slidesPerView: 1,
             spaceBetween: 10,
@@ -237,26 +205,27 @@
                 nextEl: '.swiper-button-next',
                 prevEl: '.swiper-button-prev',
             },
-            pagination: false,
             loop: false,
         });
-    </script>
 
-    <!-- Google Maps Script -->
-    <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=GOOGLE_MAPS_API_KEY&callback=initMap"></script>
-    <script>
+        // Initialize Google Maps with Driver's Current Location
         function initMap() {
-            const driverLocation = { lat: <%= driver.currentLocation.coordinates[1] %>, lng: <%= driver.currentLocation.coordinates[0] %> };
-            const map = new google.maps.Map(document.getElementById("map"), {
-                zoom: 12,
-                center: driverLocation,
+            var driverLocation = { lat: -33.9116293, lng: 18.555778 }; // Driver's current location coordinates
+            var map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 14,
+                center: driverLocation
             });
-            const marker = new google.maps.Marker({
+
+            // Add a marker for the driver's location
+            var marker = new google.maps.Marker({
                 position: driverLocation,
                 map: map,
+                title: "Driver's Current Location"
             });
         }
+
+        // Load the map
+        initMap();
     </script>
 </body>
 </html>

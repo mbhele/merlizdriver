@@ -10,8 +10,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
     <style>
         body {
-            background-color: #000; /* Black background */
-            color: #fff; /* White text */
+            background-color: #000;
+            color: #fff;
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 20px;
@@ -21,14 +21,14 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #111; /* Darker background */
+            background-color: #111;
             border-radius: 8px;
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
         }
 
         h1, h2, h3 {
             text-align: center;
-            color: #ffd700; /* Gold text */
+            color: #ffd700;
         }
 
         table {
@@ -40,39 +40,39 @@
         th, td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #ffd700; /* Gold border */
+            border-bottom: 1px solid #ffd700;
         }
 
         th {
-            background-color: #222; /* Darker background for header */
-            color: #ffd700; /* Gold text */
+            background-color: #222;
+            color: #ffd700;
         }
 
         td {
-            background-color: #111; /* Slightly darker black for table cells */
+            background-color: #111;
         }
 
-        .approve-btn, .reject-btn, .ban-btn {
-            background-color: #ffd700; /* Gold background */
-            color: #000; /* Black text */
+        .approve-btn, .reject-btn {
+            background-color: #ffd700;
+            color: #000;
             padding: 5px 10px;
             border-radius: 5px;
             text-decoration: none;
             font-size: 0.9rem;
             cursor: pointer;
             border: none;
-            margin: 10px; /* Added margin for spacing */
+            margin: 10px;
         }
 
-        .approve-btn:hover, .reject-btn:hover, .ban-btn:hover {
-            background-color: #ffbf00; /* Slightly darker gold */
+        .approve-btn:hover, .reject-btn:hover {
+            background-color: #ffbf00;
         }
 
         .swiper-container {
             width: 100%;
-            height: 360px; /* Adjust height for increased image size */
-            margin: 20px auto; /* Center the Swiper */
-            position: relative; /* Relative positioning for navigation buttons */
+            height: 360px;
+            margin: 20px auto;
+            position: relative;
         }
 
         .swiper-slide {
@@ -82,29 +82,36 @@
         }
 
         .license-images img {
-            width: 380px; /* Increased image size */
-            height: 228px; /* Adjusted height proportionally */
+            width: 380px;
+            height: 228px;
             margin: 0 auto;
             border-radius: 8px;
-            border: 2px solid #ffd700; /* Gold border */
-            cursor: pointer; /* Indicate clickable images */
-            object-fit: cover; /* Ensure images are fully visible */
+            border: 2px solid #ffd700;
+            cursor: pointer;
+            object-fit: cover;
         }
 
         .swiper-button-next,
         .swiper-button-prev {
-            color: #ffd700; /* Gold color for navigation buttons */
-            top: 50%; /* Vertically center the buttons */
-            transform: translateY(-50%); /* Adjust vertical position */
-            position: absolute; /* Position buttons absolutely */
+            color: #ffd700;
+            top: 50%;
+            transform: translateY(-50%);
+            position: absolute;
         }
 
         .swiper-button-next {
-            right: 20px; /* Bring the next button closer to the image */
+            right: 20px;
         }
 
         .swiper-button-prev {
-            left: 20px; /* Bring the previous button closer to the image */
+            left: 20px;
+        }
+
+        #map {
+            height: 400px;
+            width: 100%;
+            margin-top: 20px;
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -156,7 +163,11 @@
                 </div>
             </div>
 
-            <!-- Approve, Reject, or Ban Driver -->
+            <!-- Map Section -->
+            <h2>Driver Location</h2>
+            <div id="map"></div>
+
+            <!-- Approve or Reject Driver -->
             <form action="/admin/drivers/<%= driver._id %>/approve" method="POST" style="display:inline;">
                 <input type="hidden" name="action" value="approve">
                 <button type="submit" class="approve-btn">Approve</button>
@@ -164,10 +175,6 @@
             <form action="/admin/drivers/<%= driver._id %>/approve" method="POST" style="display:inline;">
                 <input type="hidden" name="action" value="reject">
                 <button type="submit" class="reject-btn">Reject</button>
-            </form>
-            <form action="/admin/drivers/<%= driver._id %>/ban" method="POST" style="display:inline;">
-                <input type="hidden" name="action" value="ban">
-                <button type="submit" class="ban-btn">Ban</button>
             </form>
         </div>
 
@@ -235,6 +242,23 @@
             },
             loop: false,
         });
+    </script>
+
+    <!-- Google Maps Script -->
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap"></script>
+    <script>
+        function initMap() {
+            const driverLocation = { lat: <%= driver.currentLocation.coordinates[1] %>, lng: <%= driver.currentLocation.coordinates[0] %> };
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 12,
+                center: driverLocation,
+            });
+            const marker = new google.maps.Marker({
+                position: driverLocation,
+                map: map,
+            });
+        }
     </script>
 </body>
 </html>

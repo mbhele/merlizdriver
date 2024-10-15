@@ -205,6 +205,7 @@
             <tbody>
                 <% if (driver.rideHistory.length > 0) { %>
                     <% driver.rideHistory.forEach(trip => { %>
+                        <% if (trip.status !== 'cancelled') { %>
                         <tr>
                             <td><%= trip.origin %></td>
                             <td><%= trip.destination %></td>
@@ -231,10 +232,63 @@
                                 <% } %>
                             </td>
                         </tr>
+                        <% } %>
                     <% }); %>
                 <% } else { %>
                     <tr>
                         <td colspan="6" style="text-align: center;">No trips available for this driver.</td>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+
+        <!-- Cancelled Trips Section -->
+        <h2>Cancelled Trips</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Origin</th>
+                    <th>Destination</th>
+                    <th>Cancelled At</th>
+                    <th>Reason</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% const cancelledTrips = driver.rideHistory.filter(trip => trip.status === 'cancelled'); %>
+                <% if (cancelledTrips.length > 0) { %>
+                    <% cancelledTrips.forEach(trip => { %>
+                        <tr>
+                            <td><%= trip.origin %></td>
+                            <td><%= trip.destination %></td>
+                            <td>
+                                <% if (trip.cancellationDetails && trip.cancellationDetails.time) { %>
+                                    <%= new Date(trip.cancellationDetails.time).toLocaleString() %>
+                                <% } else { %>
+                                    N/A
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (trip.cancellationDetails && trip.cancellationDetails.reason) { %>
+                                    <%= trip.cancellationDetails.reason %>
+                                <% } else { %>
+                                    N/A
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (trip.cancellationDetails && trip.cancellationDetails.location) { %>
+                                    <button onclick="showCancellationOnMap(<%= trip.cancellationDetails.location.latitude %>, <%= trip.cancellationDetails.location.longitude %>)">
+                                        Show on Map
+                                    </button>
+                                <% } else { %>
+                                    N/A
+                                <% } %>
+                            </td>
+                        </tr>
+                    <% }); %>
+                <% } else { %>
+                    <tr>
+                        <td colspan="5" style="text-align: center;">No cancelled trips for this driver.</td>
                     </tr>
                 <% } %>
             </tbody>
@@ -301,6 +355,21 @@
             // If no location is available, you might set a default or handle it accordingly
             console.log('No current location available for the driver.');
         <% } %>
+
+        // Function to show cancellation location on the map
+        function showCancellationOnMap(latitude, longitude) {
+            var latLng = L.latLng(latitude, longitude);
+
+            // Add a marker for the cancellation location
+            L.marker(latLng, {icon: L.icon({
+                iconUrl: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                iconSize: [32, 32],
+                iconAnchor: [16, 32],
+            })}).addTo(map).bindPopup('Cancellation Location').openPopup();
+
+            // Center the map on the cancellation location
+            map.setView(latLng, 13);
+        }
     </script>
 </body>
 </html>

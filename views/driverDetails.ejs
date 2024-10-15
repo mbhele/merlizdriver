@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css">
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <style>
         body {
             background-color: #000; /* Black background */
@@ -106,17 +108,18 @@
         .swiper-button-prev {
             left: 20px; /* Bring the previous button closer to the image */
         }
+
+        /* Map container */
+        #mapid {
+            height: 400px;
+            margin-top: 20px;
+            border: 2px solid #ffd700; /* Gold border */
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Display Driver's Current Location -->
-        <p style="text-align: center; font-size: 1.2em;">
-            <strong>Current Location:</strong>
-            Latitude: <%= driver.currentLocation.coordinates[1] %>,
-            Longitude: <%= driver.currentLocation.coordinates[0] %>
-        </p>
-
         <h1>Driver: <%= driver.userId.username %> (<%= driver.userId.email %>)</h1>
 
         <!-- Driver Details Section -->
@@ -127,6 +130,8 @@
             <p><strong>Vehicle:</strong> <%= driver.vehicle.make %> <%= driver.vehicle.model %> - <%= driver.vehicle.plateNumber %></p>
             <p><strong>Status:</strong> <%= driver.status %></p>
             <p><strong>Approval Status:</strong> <%= driver.approvalStatus %></p>
+            <!-- Display Driver's Current Location -->
+            <p><strong>Current Location:</strong> Latitude: <%= driver.currentLocation.coordinates[1] %>, Longitude: <%= driver.currentLocation.coordinates[0] %></p>
 
             <!-- Display License Images using Swiper -->
             <div class="license-images">
@@ -228,11 +233,19 @@
                 <% } %>
             </tbody>
         </table>
+
+        <!-- Map Section at the Bottom -->
+        <h2>Driver's Current Location on Map</h2>
+        <div id="mapid"></div>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/swiper/swiper-bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+    <!-- Leaflet JS for Map -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script>
+        // Initialize Swiper
         var swiper = new Swiper('.swiper-container', {
             slidesPerView: 1,
             spaceBetween: 10,
@@ -242,6 +255,21 @@
             },
             loop: false,
         });
+
+        // Initialize Map
+        var lat = <%= driver.currentLocation.coordinates[1] %>;
+        var lng = <%= driver.currentLocation.coordinates[0] %>;
+        var mymap = L.map('mapid').setView([lat, lng], 13);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(mymap);
+
+        // Add a marker for the driver's location
+        L.marker([lat, lng]).addTo(mymap)
+            .bindPopup("<b>Driver's Current Location</b>").openPopup();
     </script>
 </body>
 </html>

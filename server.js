@@ -1,4 +1,4 @@
-/* require('dotenv').config();
+require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
@@ -327,8 +327,6 @@ app.post('/api/send-rider-message', (req, res) => {
 /**
  * Endpoint to notify a rider with a custom message
  */
-
-
 app.post('/api/notify-rider', (req, res) => {
   const { message, riderRoom } = req.body;
 
@@ -376,5 +374,3 @@ server.listen(PORT, (err) => {
     console.log(`Server running on port ${PORT}`);
   }
 });
-
-*/
